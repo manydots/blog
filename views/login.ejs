@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= title %></title>
+    <script src="/static/index.js"></script>
+    <%- include('./header')%>
+</head>
+<body>
+    <div id="containers">
+        <form action="/login" method="POST">
+            <input value="admin" type="text" name="username"/>  <br>
+            <input value="admin123" type="password" name="pwd"/> <br>
+            <input style="display: none;" class="redirect" type="text" name="redirect"/> <br>
+        	<input type="submit" value="sub"/>
+    	</form>
+    </div>
+</body>
+<script type="text/javascript">
+	window.onload = function() {
+		var dom = document.querySelector('.redirect');
+		var redirect = getUrlParam('redirect');
+		dom.value = redirect;
+	}
+</script>
+</html>
