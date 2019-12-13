@@ -15,6 +15,6 @@ function replaceParam(paramName, replaceWith) {
 
 function checkMail(v) {
 	//^([a-z0-9A-Z]+[-|_|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$
-	var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[A-Za-z0-9]+((.|-)[A-Za-z0-9]+).([A-Za-z]{2,4})+$/;
+	var reg = /^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$/;
 	return reg.test(v);
 }

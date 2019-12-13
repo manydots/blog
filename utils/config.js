@@ -6,10 +6,10 @@ var mysqlBase = {
 };
 
 var mailBase = {
-	user: '452735383@qq.com',
+	user: '',
 	pass: '',
-	from: 'Blog激活邮件 <452735383@qq.com>',
-	subject: 'Blog注册'
+	from: '',
+	subject: ''
 }
 
 var secretKey = 'TEST_KEY';

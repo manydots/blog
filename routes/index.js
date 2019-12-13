@@ -1,8 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { query } = require('../utils/db');
-const { sysUser } = require('../utils/sql');
-const { sign } = require('../utils/jwt');
+const {
+	query
+} = require('../utils/db');
+const {
+	sysUser
+} = require('../utils/sql');
+const {
+	sign
+} = require('../utils/jwt');
+const {
+	checkMail
+} = require('../utils/index');
+
+const {
+	sendMails
+} = require('../utils/sendMail');
 
 router.get('/', function(request, response) {
 	response.render('index', {
@@ -14,6 +27,12 @@ router.get('/login', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('login', {
 		title: 'login'
+	})
+});
+
+router.get('/send', function(request, response) {
+	response.render('send', {
+		title: 'send发送邮件'
 	})
 });
 
@@ -95,6 +114,41 @@ router.post('/logout', function(request, response) {
 	response.clearCookie('_token');
 	response.clearCookie('_checkToken');
 	response.redirect('/login');
+});
+
+router.post('/sendMail', function(request, response) {
+	let to = request.body.to;
+	let sendHtml = request.body.sendHtml;
+	if (to == '' || sendHtml == '') {
+		response.json({
+			code: -102,
+			msg: '部分参数为空'
+		});
+		return;
+	} else {
+		if (!checkMail(to)) {
+			response.json({
+				code: -102,
+				msg: '邮箱格式错误'
+			});
+		} else {
+			sendMails(to, sendHtml, function(res) {
+				if (res && res.response.indexOf('250 Ok') > -1) {
+					response.json({
+						code: 0,
+						msg: '邮件发送成功'
+					});
+				} else {
+					response.json({
+						code: -103,
+						msg: '邮件发送失败'
+					});
+				}
+			})
+		}
+
+	}
+
 });
 
 module.exports = router;

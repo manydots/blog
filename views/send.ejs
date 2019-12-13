@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= title %></title>
+    <script src="/static/index.js"></script>
+    <%- include('./header')%>
+</head>
+<body>
+    <div id="containers">
+        <form action="/sendMail" method="POST">
+            <input value="1191441460@qq.com" type="text" name="to"/>  <br>
+            <input value="admin123" type="text" name="sendHtml"/> <br>
+        	<input type="submit" value="sub"/>
+    	</form>
+    </div>
+</body>
+<script type="text/javascript">
+	window.onload = function() {
+		var dom = document.querySelector('.redirect');
+		console.log(dom)
+	}
+</script>
+</html>
