@@ -14,7 +14,7 @@ package-lock.json
 .docz
 #git
 .git
-public
+utils/config.js
 .vscode
 imgs/
 content/
