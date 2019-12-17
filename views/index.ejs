@@ -8,6 +8,19 @@
     <form action="/logout" method="POST">
         <input type="submit" value="logout"/>
     </form>
+    <a href="/wr" target="_blank">wr</a>
+
+    <% if (result.length) { %>
+        <ul class="article-list">
+            <% result.forEach(function(item,index){ %>
+              <li class="mb10">
+              	<div><%= item.title %></div>
+		        <div>作者：<%= item.author %> 修改时间：<%= fmt(item.modify_time) %> 标签：<%= item.tags %></div>
+		        <div>内容：<%= item.context %></div>
+              </li>
+            <% }) %>
+        </ul>
+    <% } %>
 </body>
 <script type="text/javascript"></script>
 </html>

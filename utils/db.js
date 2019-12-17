@@ -1,5 +1,11 @@
 const mysql = require("mysql");
-const { mysqlBase } = require("./config");
+const {
+	mysqlBase
+} = require("./config");
+
+const {
+	MD5
+} = require('./crypto');
 
 // 创建连接
 const pool = mysql.createPool({
@@ -18,6 +24,19 @@ function query(sql, callback, identifiers) {
 
 		} else {
 			if (identifiers) {
+
+
+				if (typeof identifiers === 'object') {
+					identifiers = identifiers.map(function(val, index) {
+						if (val.encryption && val.encryption == true) {
+							return MD5(val.values)
+						} else {
+							return val.values
+						}
+
+					})
+
+				}
 				connect.query(sql, identifiers, function(qerr, vals, fields) {
 					if (callback) {
 						callback(qerr, vals, fields);

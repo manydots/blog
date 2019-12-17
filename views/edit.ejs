@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= title %></title>
+    <script src="/static/index.js"></script>
+    <%- include('./header')%>
+</head>
+<body>
+    <div id="containers">
+        <form action="/publish" method="POST">
+            <input value="" type="text" name="title"/>  <br>
+            <input value="" type="text" name="context"/> <br>
+            <input value="" type="text" name="tags"/> <br>
+        	<input type="submit" value="sub"/>
+    	</form>
+    </div>
+</body>
+<script type="text/javascript">
+
+</script>
+</html>
