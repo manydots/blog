@@ -1,11 +1,11 @@
 const {
 	secretKey,
 	getKeys
-} = require('./config');
+} = require('../utils/config');
 const {
 	sign,
 	verify
-} = require('./jwt');
+} = require('../utils/jwt');
 
 function middleware(router) {
 	return router.use((req, res, next) => {

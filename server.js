@@ -7,7 +7,7 @@ var app = express();
 var router = require('./routes/index');
 var port = process.env.port || 3034;
 
-var middleware = require('./utils/middleware');
+var middleware = require('./routes/middleware');
 
 app.use(cookieParser());
 app.use(bodyparser.json());
