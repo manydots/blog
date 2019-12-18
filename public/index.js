@@ -1,3 +1,45 @@
+function pjax(options) {
+  var self = this;
+  return new Promise(function(resolve, reject) {
+    $.ajax({
+      url: options.url ? options.url : '',
+      type: options.method ? options.method : 'get',
+      data: options.data ? options.data : '',
+      beforeSend: function(diss) {
+        //禁用提交按钮
+
+      },
+      success: function(res) {
+        if (resolve) {
+          resolve(stringToObject(res))
+        }
+      },
+      error: function(error) {
+        reject(stringToObject(error))
+      }
+    })
+  })
+}
+
+function stringToObject(data) {
+  var results = null,
+    index = 0;
+  if (data && data != '' && data != '""') {
+    results = data;
+  } else {
+    return;
+  }
+  while (typeof results === 'string') {
+    index++;
+    if (results.indexOf('{') > -1 && results.lastIndexOf('}') > -1) {
+      results = JSON.parse(results);
+    } else {
+      break;
+    }
+  };
+  return results;
+}
+
 function getUrlParam(name) {
 	name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
 	var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),

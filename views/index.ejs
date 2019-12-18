@@ -2,25 +2,128 @@
 <html lang="en">
 <head>
     <title><%= title %></title>
+    <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/static/index.js"></script>
+    <script src="/static/doT.min.js"></script>
     <%- include('./header')%>
 </head>
 <body>
-    <form action="/logout" method="POST">
-        <input type="submit" value="logout"/>
-    </form>
-    <a href="/wr" target="_blank">wr</a>
+    <%- include('./top')%>
+    
+    <div class="blog-article w990">
+        <div class="blog-news wp100">
+            最新文章 >>
+        </div>
+        <div class="w770 fl">
+            <div class="blog-article-result">
+                <% if (result.length) { %>
+                 <ul class="blog-article-list">
+                    <% result.forEach(function(item,index){ %>
+                      <li class="blog-article-list-li mb10">
+                        <div class="article-title"><%= item.title %></div>
+                        <div class="article-context">
+                            <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
+                        </div>
+                        <div class="article-author">
+                            作者：<%= item.author %> 
+                            修改时间：<%= fmt(item.creat_time) %> 
+                            <span class="tags">
+                                <%= item.tags %>    
+                            </span>
+                        </div>
+                      </li>
+                    <% }) %>
+                </ul>
+                <% } %>
+            </div>
+            <div class="pagination">
+                <% if (page.pageCount > 1) { %>
+                    <span data-page="1" class="firstPage pagination-list">
+                        <a href="/?pageIndex=1&pageSize=<%= page.pageSize %>" data-spm-disabled="true" >首页</a>
+                    </span> 
+                    <% for(var i=1;i<=page.pageCount;i++){%>
+                        <span data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>current<% } %> normal pagination-list" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
+                            <%= i %>
+                            <!-- <a href="<% if(i == page.pageIndex) { %>javascript:;<% } else { %>/?pageIndex=<%= i %>&pageSize=<%= page.pageSize %><% } %>"><%= i %></a> -->
+                        </span> 
+                    <% } %>
+                    <span data-page="<%= page.pageCount %>" class="lastPage pagination-list">
+                        <a href="/?pageIndex=<%= page.pageCount %>&pageSize=<%= page.pageSize %>" data-spm-disabled="true">尾页</a>
+                    </span>
 
-    <% if (result.length) { %>
-        <ul class="article-list">
-            <% result.forEach(function(item,index){ %>
-              <li class="mb10">
-              	<div><%= item.title %></div>
-		        <div>作者：<%= item.author %> 修改时间：<%= fmt(item.modify_time) %> 标签：<%= item.tags %></div>
-		        <div>内容：<%= item.context %></div>
-              </li>
-            <% }) %>
-        </ul>
-    <% } %>
+                    <!-- 总共数据:[<%= page.total %>];
+                    总页数:[<%= page.pageCount %>];
+                    当前第[<%= page.pageIndex %>]页;
+                    每页[<%= page.pageSize %>]条; -->
+                <% } %>
+                <input class="pageCount" type="text" value="<%= page.pageCount %>" style="display: none">
+                <input class="pageIndex" type="text" value="<%= page.pageIndex %>" style="display: none">
+
+            </div>
+
+        </div>
+
+        <div class="blog-advertisement w200 fl ml20">
+            <div class="blog-advertisement-in">
+                这里是普通占位~可放广告或者其他热搜文章
+            </div>
+        </div>
+    </div>
+
+    <%- include('./footer')%>
 </body>
-<script type="text/javascript"></script>
+<script id="template-tmpl" type="text/template">
+        <ul class="blog-article-list">
+            {{~it:v:index}}
+            <li class="blog-article-list-li mb10">
+                <div class="article-title">{{=v.title}}</div>
+                <div class="article-context">
+                    <a href="/a/{{=v.id}}" target="_blank">{{= v.context }}</a>
+                </div>
+                <div class="article-author">
+                        作者：{{= v.author }}
+                        修改时间：{{= v.creat_time }}
+                        <span class="tags">
+                            {{= v.tags }}
+                        </span>
+                </div>
+            </li>
+            {{~}}
+        </ul>
+      </script>
+<script type="text/javascript">
+    $(function(){
+        $('.pagination .nextPage').on('click',function(){
+            var pageIndex = parseInt($('.pageIndex').val()) || 1;
+            var pageCount = parseInt($('.pageCount').val()) || 1;
+            console.log(pageCount)
+            //onLoadPage(pageIndex + 1,10);
+        })
+        
+        function onLoadPage(pageIndex,pageSize){
+            pjax({
+                url:'/',
+                method:'get',
+                data:{
+                    pageIndex:pageIndex || 1,
+                    pageSize:pageSize || 10
+                }
+            }).then(function(res){
+                console.log(res)
+                if(res && res.code == 200){
+                    var template = doT.template($("#template-tmpl").html());
+                    console.log(res.page.pageIndex)
+                    $('.pageIndex').val(res.page.pageIndex);
+                    $('.pageCount').val(res.page.pageCount);
+                    $(".blog-article-result").html(template(res.result));
+                }
+            });
+        };
+    });
+    function goNext(pageIndex,pageSize){
+        window.location.href = origin+`?pageIndex=${pageIndex}&pageSize=${pageSize}`;
+    }
+
+</script>
 </html>

@@ -23,18 +23,45 @@ const {
 } = require('../utils/crypto');
 
 router.get('/', function(request, response) {
-
-	query(sysUser.getArticleAll, function(err, rows, fields) {
+	let pageIndex = request.indexPage.pageIndex;
+	let pageSize = request.indexPage.pageSize || 10;
+	//console.log(request.indexPage)
+	query(sysUser.getArticleCount, function(err, rows, fields) {
 		if (err) {
-			//console.log(err)
+			response.json({
+				code: -101,
+				msg: '数据库get-getArticleCount错误！'
+			});
 		} else {
-			response.render('index', {
-				title: '个人Blog',
-				result: rows,
-				fmt: formatDate
-			})
+			let totals = rows[0].total;
+			let params = [{
+				values: (pageIndex - 1) * pageSize
+			}, {
+				values: pageSize,
+			}];
+			query(sysUser.getArticleAll, function(err, rows, fields) {
+				if (err) {
+					response.json({
+						code: -101,
+						msg: '数据库get-getArticleAll错误！'
+					});
+				} else {
+					response.render('index', {
+						title: '首页',
+						result: rows,
+						fmt: formatDate,
+						page: {
+							total: totals,
+							pageIndex: pageIndex,
+							pageSize: pageSize,
+							pageCount: Math.ceil(totals / pageSize)
+						}
+					})
+				};
+			}, params);
 		};
 	});
+
 });
 
 router.get('/login', function(request, response) {
@@ -142,6 +169,49 @@ router.post('/login', function(request, response) {
 			}
 		};
 	}, params);
+});
+
+router.post('/', function(request, response) {
+
+	let pageIndex = parseInt(request.body.pageIndex) || 1;
+	let pageSize = parseInt(request.body.pageSize) || 10;
+
+	query(sysUser.getArticleCount, function(err, rows, fields) {
+		if (err) {
+			response.json({
+				code: -101,
+				msg: '数据库getArticleCount错误！'
+			});
+		} else {
+			let totals = rows[0].total;
+			let params = [{
+				values: (pageIndex - 1) * pageSize
+			}, {
+				values: pageSize,
+			}];
+			query(sysUser.getArticleAll, function(err, rows, fields) {
+				if (err) {
+					response.json({
+						code: -101,
+						msg: '数据库getArticleAll错误！'
+					});
+				} else {
+
+					response.json({
+						result: rows,
+						code: 200,
+						page: {
+							total: totals,
+							pageIndex: pageIndex,
+							pageSize: pageSize,
+							pageCount: Math.ceil(totals / pageSize)
+						}
+					})
+				};
+			}, params);
+		};
+	});
+
 });
 
 

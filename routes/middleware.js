@@ -24,6 +24,18 @@ function middleware(router) {
 		} else {
 			//路由为/login
 			var _author = getKeys('_token', req.headers['cookie']);
+			//console.log(req.body)
+			//console.log(req.query)
+			// req.indexPage = {
+			// 	pageIndex:parseInt(req.body.pageIndex) || 1,
+			// 	pageSize: parseInt(req.body.pageSize) || 10
+			// };
+
+			req.indexPage = {
+				pageIndex:parseInt(req.query.pageIndex) || 1,
+				pageSize: parseInt(req.query.pageSize) || 10
+			};
+			//console.log(req.indexPage)
 			if (_author) {
 				verify(_author.value, function(err, decode) {
 					if (err) {
