@@ -63,6 +63,10 @@ input:-webkit-autofill {
 	margin-left: 15px;
 }
 
+.ml10 {
+	margin-left: 10px;
+}
+
 .ml20 {
 	margin-left: 20px;
 }
@@ -106,6 +110,13 @@ input:-webkit-autofill {
 .blog-article-list-li .article-author {
 	color: #999;
 	font-size: 12px;
+}
+
+.blog-article-list-li .article-follow{
+	font-size: 12px;
+}
+.blog-article-list-li .article-follow b{
+	color: #ff9900;
 }
 
 .blog-article-list-li .article-author .tags {

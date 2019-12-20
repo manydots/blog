@@ -10,8 +10,9 @@ const {
 	sign
 } = require('../utils/jwt');
 const {
-	checkMail,
-	formatDate
+	formatDate,
+	dateDiff,
+	curryingCheck
 } = require('../utils/index');
 
 const {
@@ -22,10 +23,13 @@ const {
 	MD5
 } = require('../utils/crypto');
 
+var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
+var checkMail = curryingCheck('^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$');
+
 router.get('/', function(request, response) {
 	let pageIndex = request.indexPage.pageIndex;
 	let pageSize = request.indexPage.pageSize || 10;
-	//console.log(request.indexPage)
+	//console.log(request.checkUser)
 	query(sysUser.getArticleCount, function(err, rows, fields) {
 		if (err) {
 			response.json({
@@ -50,6 +54,11 @@ router.get('/', function(request, response) {
 						title: '首页',
 						result: rows,
 						fmt: formatDate,
+						diff: dateDiff,
+						token: request.session.token ? {
+							userName: request.session.userName,
+							userId: request.session.userId
+						} : null,
 						page: {
 							total: totals,
 							pageIndex: pageIndex,
@@ -147,12 +156,21 @@ router.post('/login', function(request, response) {
 					msg: '账号不存在或密码错误！'
 				});
 			} else {
-				request.session.userName = request.body.username;
+				if (rows[0].state == '1') {
+					response.json({
+						code: -303,
+						msg: '账号已被封停，请联系客服'
+					});
+					return;
+				}
+				request.session.userName = rows[0].user_name;
+				request.session.userId = rows[0].id;
 				let tokens = sign({
 					token: {
 						lastLoginTime: +new Date(),
 						isLogin: true,
-						userName: request.body.user_name
+						userId: rows[0].id,
+						userName: rows[0].user_name
 					},
 					option: {
 						expiresIn: 60 * 15 // 15分钟过期
@@ -219,7 +237,7 @@ router.post('/logout', function(request, response) {
 	request.session.destroy();
 	response.clearCookie('_token');
 	response.clearCookie('_checkToken');
-	response.redirect('/login');
+	response.redirect('/');
 });
 
 router.post('/publish', function(request, response) {
@@ -227,6 +245,9 @@ router.post('/publish', function(request, response) {
 	let params = [{
 		values: request.checkUser.userName,
 		column: 'author'
+	}, {
+		values: request.session.userId,
+		column: 'user_id'
 	}, {
 		values: request.body.title,
 		column: 'title',
@@ -258,6 +279,32 @@ router.post('/publish', function(request, response) {
 
 router.post('/register', function(request, response) {
 	//console.log(request.body)
+	if (!request.body.user_name || request.body.user_name == '' || !checkUserName(request.body.user_name) || request.body.user_name.length < 3) {
+		response.json({
+			code: -304,
+			msg: '用户名错误或含有特殊字符或用户名位数不足3位以上',
+			type: 'user_register_username_error'
+		})
+		return;
+	}
+
+	if (!request.body.pass_word || request.body.pass_word == '' || request.body.pass_word.length < 4) {
+		response.json({
+			code: -304,
+			msg: '密码位数不足，4位以上',
+			type: 'user_register_password_error'
+		})
+		return;
+	}
+
+	if (!request.body.mail || request.body.mail == '' || !checkMail(request.body.mail)) {
+		response.json({
+			code: -304,
+			msg: '邮箱格式错误',
+			type: 'user_register_mail_error'
+		})
+		return;
+	}
 
 	if (request.body.user_name && request.body.user_name != '') {
 		query(sysUser.getUserByUserName, function(err, rows, fields) {
@@ -265,7 +312,7 @@ router.post('/register', function(request, response) {
 				//console.log(err)
 				response.json({
 					code: -101,
-					msg: '数据库错误'
+					msg: '数据库getUserByUserName错误'
 				})
 				return;
 			} else {
@@ -289,7 +336,7 @@ router.post('/register', function(request, response) {
 						if (err) {
 							response.json({
 								code: -101,
-								msg: '数据库错误'
+								msg: '数据库into错误'
 							})
 							//console.log(err)
 						} else {
@@ -347,4 +394,91 @@ router.post('/sendMail', function(request, response) {
 
 });
 
+router.post('/follow', function(request, response) {
+	if (!request.session.token) {
+		response.json({
+			code: -305,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		let followed = parseInt(request.body.followed);
+		let userId = parseInt(request.body.userId)
+		let liker = request.session.userId;
+		//console.log(followed, userId, liker)
+		query(sysUser.getArticleById, function(err, rows, fields) {
+			if (err) {
+				console.log(err)
+			} else {
+				if (rows.length <= 0) {
+					response.json({
+						code: -405,
+						msg: '文章不存在'
+					});
+					return;
+				} else {
+					query(sysUser.getFollowLog, function(err, rows1, fields) {
+						if (err) {
+							console.log(err)
+						} else {
+							if (rows.length <= 0) {
+								//新增点赞
+								let params = [{
+									values: followed,
+									column: 'article_id'
+								}, {
+									values: userId,
+									column: 'user_id',
+								}, {
+									values: 'like',
+									column: 'type'
+								}, {
+									values: liker,
+									column: 'follower'
+								}, {
+									values: formatDate(),
+									column: 'creat_time'
+								}];
+								query(sysUser.intoFollowLog, function(err2, rows2, fields) {
+									if (err2) {
+										console.log(err2);
+									}
+									response.json({
+										code: 200,
+										msg: '点赞成功'
+									});
+								}, params);
+							} else {
+								//更新点赞
+								let oldfollower = rows1[0].follower;
+								if (oldfollower.indexOf(liker) < -1) {
+									oldfollower = oldfollower + ',' + liker;
+								}
+
+								let params = [{
+									values: oldfollower,
+									column: 'follower'
+								}, {
+									values: formatDate(),
+									column: 'creat_time'
+								}, {
+									values: followed,
+									column: 'article_id'
+								}];
+
+								query(sysUser.updateFollowLog, function() {
+									response.json({
+										code: 200,
+										msg: '更新点赞成功'
+									});
+								}, params);
+							}
+						};
+					}, followed);
+				}
+			};
+		}, followed);
+	}
+
+})
 module.exports = router;

@@ -21,16 +21,22 @@
                  <ul class="blog-article-list">
                     <% result.forEach(function(item,index){ %>
                       <li class="blog-article-list-li mb10">
+
                         <div class="article-title"><%= item.title %></div>
                         <div class="article-context">
                             <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
                         </div>
                         <div class="article-author">
                             作者：<%= item.author %> 
-                            修改时间：<%= fmt(item.creat_time) %> 
+                            修改时间：<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
                             <span class="tags">
                                 <%= item.tags %>    
                             </span>
+                        </div>
+                        <div class="article-follow">
+                            <b><% if(item.follower) { %><%= item.follower.split(',').length %><% } else { %>0<% } %></b>人已赞
+
+                            <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>)">点赞</span>
                         </div>
                       </li>
                     <% }) %>
@@ -125,5 +131,17 @@
         window.location.href = origin+`?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     }
 
+    function gofollow(id,userId){
+        pjax({
+            url:'/follow',
+            method:'post',
+            data:{
+                followed:id,
+                userId:userId
+            }
+        }).then(function(res){
+            console.log(res)
+        });
+    };
 </script>
 </html>

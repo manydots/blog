@@ -1,7 +1,15 @@
 <div class="blog-top">
 	<div class="blog-top-content w990">
-		<form action="/logout" method="POST">
-        	<input type="submit" value="logout"/>
-    	</form>
+    	<% if(token) { %>
+    		<span class="fl">欢迎：<%= token.userName %>！</span>
+    		<form action="/logout" method="POST" class="fl">
+        		<input type="submit" value="退出"/>
+    		</form>
+    	<% } else { %>
+    		<span class="fl">你好，游客！</span>
+			<span class="fl ml10"><a href="/login">去登陆</a></span>
+    	<% } %>
+			<span class="fl ml10"><a href="/send" target="_blank">发邮件</a></span>
+			<span class="fl ml10"><a href="/edit" target="_blank">发布文章</a></span>
 	</div>
 </div>
