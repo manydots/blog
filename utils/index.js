@@ -1,3 +1,24 @@
+if (!Array.prototype.indexOf) {
+	Array.prototype.indexOf = function(elt /*, from*/ ) {
+		var len = this.length >>> 0;
+		var from = Number(arguments[1]) || 0;
+		from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+		if (from < 0)
+			from += len;
+		for (; from < len; from++) {
+			if (from in this &&
+				this[from] === elt)
+				return from;
+		}
+		return -1;
+	};
+}
+
+function isContain(out) {
+	console.log(out)
+	return true;
+}
+
 function checkMail(v) {
 	var reg = /^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$/;
 	return reg.test(v);
@@ -97,7 +118,7 @@ function dateDiff(timestamp) {
 
 function curryingCheck(reg) {
 	return function(txt) {
-		if(typeof reg != 'object'){
+		if (typeof reg != 'object') {
 			reg = new RegExp(reg);
 		}
 		return reg.test(txt);
@@ -108,5 +129,6 @@ module.exports = {
 	checkMail: checkMail,
 	formatDate: formatDate,
 	dateDiff: dateDiff,
-	curryingCheck: curryingCheck
+	curryingCheck: curryingCheck,
+	isContain: isContain
 };

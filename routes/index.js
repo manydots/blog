@@ -12,7 +12,8 @@ const {
 const {
 	formatDate,
 	dateDiff,
-	curryingCheck
+	curryingCheck,
+	isContain
 } = require('../utils/index');
 
 const {
@@ -404,11 +405,16 @@ router.post('/follow', function(request, response) {
 	} else {
 		let followed = parseInt(request.body.followed);
 		let userId = parseInt(request.body.userId)
-		let liker = request.session.userId;
+		let liker = parseInt(request.session.userId);
 		//console.log(followed, userId, liker)
 		query(sysUser.getArticleById, function(err, rows, fields) {
 			if (err) {
-				console.log(err)
+				//console.log(err)
+				response.json({
+					code: -101,
+					msg: '数据库getArticleById错误'
+				})
+
 			} else {
 				if (rows.length <= 0) {
 					response.json({
@@ -417,12 +423,19 @@ router.post('/follow', function(request, response) {
 					});
 					return;
 				} else {
-					query(sysUser.getFollowLog, function(err, rows1, fields) {
-						if (err) {
-							console.log(err)
+					//console.log(rows[0])
+					query(sysUser.getFollowLog, function(err1, rows1, fields) {
+						if (err1) {
+							//console.log(err1)
+							response.json({
+								code: -101,
+								msg: '数据库getFollowLog错误'
+							})
+
 						} else {
-							if (rows.length <= 0) {
-								//新增点赞
+							//console.log(rows1)
+							if (rows1.length <= 0) {
+								//新增点赞记录
 								let params = [{
 									values: followed,
 									column: 'article_id'
@@ -433,7 +446,7 @@ router.post('/follow', function(request, response) {
 									values: 'like',
 									column: 'type'
 								}, {
-									values: liker,
+									values: liker + ',',
 									column: 'follower'
 								}, {
 									values: formatDate(),
@@ -441,43 +454,153 @@ router.post('/follow', function(request, response) {
 								}];
 								query(sysUser.intoFollowLog, function(err2, rows2, fields) {
 									if (err2) {
-										console.log(err2);
+										//console.log(err2);
+										response.json({
+											code: -101,
+											msg: '数据库intoFollowLog错误'
+										})
+									} else {
+										response.json({
+											code: 200,
+											msg: '点赞成功'
+										});
 									}
-									response.json({
-										code: 200,
-										msg: '点赞成功'
-									});
+
 								}, params);
 							} else {
-								//更新点赞
+								//更新点赞记录
 								let oldfollower = rows1[0].follower;
-								if (oldfollower.indexOf(liker) < -1) {
-									oldfollower = oldfollower + ',' + liker;
-								}
+								if (oldfollower.indexOf(liker) <= -1) {
 
-								let params = [{
-									values: oldfollower,
-									column: 'follower'
-								}, {
-									values: formatDate(),
-									column: 'creat_time'
-								}, {
-									values: followed,
-									column: 'article_id'
-								}];
+									oldfollower = oldfollower + liker + ',';
 
-								query(sysUser.updateFollowLog, function() {
+									let params = [{
+										values: oldfollower,
+										column: 'follower'
+									}, {
+										values: formatDate(),
+										column: 'creat_time'
+									}, {
+										values: followed,
+										column: 'article_id'
+									}];
+
+									query(sysUser.updateFollowLog, function(e, r, f) {
+										if (e) {
+											response.json({
+												code: -101,
+												msg: '数据库updateFollowLog错误'
+											})
+										} else {
+											response.json({
+												code: 200,
+												msg: '更新点赞成功'
+											});
+										}
+
+									}, params);
+								} else {
 									response.json({
 										code: 200,
-										msg: '更新点赞成功'
+										msg: '更新点赞重复成功'
 									});
-								}, params);
+								}
+
+
 							}
 						};
 					}, followed);
 				}
 			};
 		}, followed);
+	}
+
+})
+
+
+router.post('/unfollow', function(request, response) {
+	if (!request.session.token) {
+		response.json({
+			code: -305,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		let unfollowed = parseInt(request.body.unfollowed);
+		let unliker = parseInt(request.session.userId);
+		//console.log(unfollowed, userId, liker)
+		query(sysUser.getArticleById, function(err, rows, fields) {
+			if (err) {
+				//console.log(err)
+				response.json({
+					code: -101,
+					msg: '数据库unfollow-getArticleById错误'
+				})
+			} else {
+				if (rows.length <= 0) {
+					response.json({
+						code: -405,
+						msg: '文章不存在'
+					});
+					return;
+				} else {
+					query(sysUser.getFollowLog, function(err1, rows1, fields) {
+						if (err1) {
+							//console.log(err1)
+							response.json({
+								code: -101,
+								msg: '数据库unfollow-getFollowLog错误'
+							})
+						} else {
+							if (rows1.length <= 0) {
+								response.json({
+									code: -406,
+									msg: '未关注，不需要取消关注'
+								});
+							} else {
+								let old_follower = rows1[0].follower;
+								if (old_follower.indexOf(unliker) <= -1) {
+									response.json({
+										code: -406,
+										msg: '未关注，不需要取消关注'
+									});
+								} else {
+									old_follower = old_follower.replace(`${unliker},`, '');
+									let params = [{
+										values: old_follower,
+										column: 'follower'
+									}, {
+										values: formatDate(),
+										column: 'creat_time'
+									}, {
+										values: unfollowed,
+										column: 'article_id'
+									}];
+
+									query(sysUser.updateFollowLog, function(e, r, f) {
+										if (e) {
+											//console.log(e);
+											response.json({
+												code: -101,
+												msg: '数据库unfollow-updateFollowLog错误'
+											})
+
+										} else {
+											response.json({
+												code: 200,
+												msg: '点赞取消成功'
+											});
+										}
+
+									}, params);
+								}
+
+							}
+						};
+					}, unfollowed);
+				}
+			};
+		}, unfollowed);
 	}
 
 })

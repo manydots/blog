@@ -17,6 +17,7 @@ function middleware(router) {
 		};
 		//console.log(req.url)
 		//路由不为/login且token不为空
+
 		if (!req.session.token && (req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
 			let redirect = req.url.indexOf('?') > -1 ? `/login?redirect=${encodeURIComponent(req.url)}` : '/login';
 			res.redirect(redirect);
@@ -30,11 +31,16 @@ function middleware(router) {
 			// 	pageIndex:parseInt(req.body.pageIndex) || 1,
 			// 	pageSize: parseInt(req.body.pageSize) || 10
 			// };
-
 			req.indexPage = {
-				pageIndex:parseInt(req.query.pageIndex) || 1,
+				pageIndex: parseInt(req.query.pageIndex) || 1,
 				pageSize: parseInt(req.query.pageSize) || 10
 			};
+			
+			if (req.session.token && req.headers['x-pjax'] && req.method == 'POST') {
+				console.log(req.url, req.method)
+				// res.redirect('/');
+				// return;
+			}
 			//console.log(req.indexPage)
 			if (_author) {
 				verify(_author.value, function(err, decode) {

@@ -4,6 +4,7 @@
     <title><%= title %></title>
     <link rel="stylesheet" type="text/css" href="/static/index.css">
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script>
     <script src="/static/index.js"></script>
     <script src="/static/doT.min.js"></script>
     <%- include('./header')%>
@@ -34,9 +35,31 @@
                             </span>
                         </div>
                         <div class="article-follow">
-                            <b><% if(item.follower) { %><%= item.follower.split(',').length %><% } else { %>0<% } %></b>人已赞
+                            <b><% if(item.follower) { %><%= item.follower.split(',').length -1 %><% } else { %>0<% } %></b>人已赞
 
-                            <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>)">点赞</span>
+                            <% if(token) { %>
+
+                                <% if(item.follower) { %>
+
+                                    <% if(item.follower.indexOf(token.userId) > -1) { %>
+                                        <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gounfollow(<%=item.id%>,<%=item.user_id%>,this)">取消点赞</span>
+                                    <% } else { %>
+                                        <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
+                                    <% } %>
+
+                                <% } else { %>
+                                    <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
+                                <% } %>
+                                
+
+                            <% } else { %>
+
+                                <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
+                                
+                            <% } %>
+                            
+
+                            
                         </div>
                       </li>
                     <% }) %>
@@ -73,7 +96,9 @@
         <div class="blog-advertisement w200 fl ml20">
             <div class="blog-advertisement-in">
                 这里是普通占位~可放广告或者其他热搜文章
+                <div id="pjax-container">pjax-container</div> 
             </div>
+
         </div>
     </div>
 
@@ -99,7 +124,11 @@
         </ul>
       </script>
 <script type="text/javascript">
+    
     $(function(){
+
+        //$(document).pjax('a[data-pjax]', '#pjax-container');
+
         $('.pagination .nextPage').on('click',function(){
             var pageIndex = parseInt($('.pageIndex').val()) || 1;
             var pageCount = parseInt($('.pageCount').val()) || 1;
@@ -108,13 +137,14 @@
         })
         
         function onLoadPage(pageIndex,pageSize){
-            pjax({
+            pjaxs({
                 url:'/',
                 method:'get',
                 data:{
                     pageIndex:pageIndex || 1,
                     pageSize:pageSize || 10
-                }
+                },
+                headers: {'x-pjax': true},
             }).then(function(res){
                 console.log(res)
                 if(res && res.code == 200){
@@ -131,17 +161,44 @@
         window.location.href = origin+`?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     }
 
-    function gofollow(id,userId){
-        pjax({
+    function gofollow(id,userId, _this){
+        var num = $(_this).siblings('b').html()*1;
+        //console.log(_this.getAttribute('data-id'))
+        pjaxs({
             url:'/follow',
             method:'post',
             data:{
                 followed:id,
                 userId:userId
-            }
+            },
+            headers: {'x-pjax': true},
         }).then(function(res){
-            console.log(res)
+            console.log(res);
+            if(res && res.code == 200){
+                $.pjax.reload('html');
+                //window.location.reload();
+                $(_this).siblings('b').html(num+1);
+            }
         });
     };
+
+    function gounfollow(id, userId, _this){
+        var num = $(_this).siblings('b').html()*1;
+        pjaxs({
+            url:'/unfollow',
+            method:'post',
+            data:{
+                unfollowed:id,
+            },
+            headers: {'x-pjax': true},
+        }).then(function(res){
+            console.log(res)
+            if(res && res.code == 200){
+                $.pjax.reload('html');
+                //window.location.reload();
+                $(_this).siblings('b').html(num-1);
+            }
+        });
+    }
 </script>
 </html>
