@@ -1,28 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const {
-	query
-} = require('../utils/db');
-const {
-	sysUser
-} = require('../utils/sql');
-const {
-	sign
-} = require('../utils/jwt');
-const {
-	formatDate,
-	dateDiff,
-	curryingCheck,
-	isContain
-} = require('../utils/index');
-
-const {
-	sendMails
-} = require('../utils/sendMail');
-
-const {
-	MD5
-} = require('../utils/crypto');
+const { query } = require('../utils/db');
+const { sysUser } = require('../utils/sql');
+const { sign } = require('../utils/jwt');
+const { cookieMaxAge } = require('../utils/config');
+const { formatDate,dateDiff,curryingCheck,isContain} = require('../utils/index');
+const { sendMails } = require('../utils/sendMail');
 
 var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
 var checkMail = curryingCheck('^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$');
@@ -174,7 +157,7 @@ router.post('/login', function(request, response) {
 						userName: rows[0].user_name
 					},
 					option: {
-						expiresIn: 60 * 15 // 15分钟过期
+						expiresIn: 60 * cookieMaxAge // 15分钟过期
 					}
 				});
 				request.session.token = tokens;

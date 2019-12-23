@@ -1,11 +1,5 @@
-const {
-	secretKey,
-	getKeys
-} = require('../utils/config');
-const {
-	sign,
-	verify
-} = require('../utils/jwt');
+const { getKeys } = require('../utils/index');
+const { sign, verify} = require('../utils/jwt');
 
 function middleware(router) {
 	return router.use((req, res, next) => {

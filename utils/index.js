@@ -125,10 +125,37 @@ function curryingCheck(reg) {
 	}
 }
 
+function getKeys(keys, str) {
+	if (typeof str === 'string' && keys != '') {
+		str = str.split(';');
+	} else if (typeof str === 'object' && keys != '') {
+		str = str;
+	}
+	for (let item in str) {
+		if (str[item].indexOf(keys) > -1) {
+			return {
+				value: getCookieItem(keys, str[item]),
+				Expires: getCookieItem('Expires', str[item]),
+				values: str[item]
+			};
+			break;
+		}
+	}
+}
+
+function getCookieItem(name, str) {
+	name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+	var regex = new RegExp("[\\;]?" + name + "=([^;]*)"),
+		results = regex.exec(str);
+	return results == null ? "" : decodeURIComponent(results[1]);
+}
+
 module.exports = {
 	checkMail: checkMail,
 	formatDate: formatDate,
 	dateDiff: dateDiff,
 	curryingCheck: curryingCheck,
-	isContain: isContain
+	isContain: isContain,
+	getKeys: getKeys,
+	getCookieItem: getCookieItem,
 };

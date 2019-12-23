@@ -5,6 +5,7 @@ var cookieParser = require('cookie-parser');
 var path = require('path');
 var app = express();
 var router = require('./routes/index');
+var { secretKey, cookieMaxAge } = require('./utils/config');
 var port = process.env.port || 3034;
 
 var middleware = require('./routes/middleware');
@@ -16,11 +17,11 @@ app.use(bodyparser.urlencoded({
 }));
 
 app.use(session({
-	secret: require('./utils/config').secretKey,
+	secret: secretKey,
 	name: '_checkToken',
 	//退出后保持的时间
 	cookie: {
-		maxAge: 1 * 1000 * 60 * 15
+		maxAge: 1 * 1000 * 60 * cookieMaxAge
 	},
 	resave: false,
 	saveUninitialized: false,

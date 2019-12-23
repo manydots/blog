@@ -12,10 +12,6 @@ var sysUser = {
 	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?'
 };
 
-var sysMusic = {
-
-};
 module.exports = {
-	sysUser: sysUser,
-	sysMusic: sysMusic
+	sysUser: sysUser
 };
