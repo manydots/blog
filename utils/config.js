@@ -1,6 +1,6 @@
 var mysqlBase = {
-	"host": "",
-	"user": "",
+	"host": "47.98.58.14",
+	"user": "root",
 	"password": "",
 	"database": "",
 };

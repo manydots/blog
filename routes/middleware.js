@@ -1,5 +1,11 @@
-const { getKeys } = require('../utils/index');
+const { getKeys, getClientIp, formatDate } = require('../utils/index');
 const { sign, verify} = require('../utils/jwt');
+const { RabbitMQ } = require('../utils/rabbitMQ');
+const { sysUser } = require('../utils/sql');
+const { query } = require('../utils/db');
+
+let mq = new RabbitMQ();
+
 
 function middleware(router) {
 	return router.use((req, res, next) => {
@@ -9,8 +15,37 @@ function middleware(router) {
 		if (req.url.endsWith('.js') || req.url.endsWith('.css')) {
 			res.redirect(`/static${req.url}`);
 		};
-		//console.log(req.url)
+		let ip = getClientIp(req, 'nginx');
+		let params = [{
+			values: req.url,
+			column: 'api'
+		}, {
+			values: req.method,
+			column: 'method',
+		}, {
+			values: ip,
+			column: 'ip'
+		}, {
+			values: formatDate(),
+			column: 'creat_time'
+		}];
+		//console.log(params)
 		//路由不为/login且token不为空
+
+		query(sysUser.intoLimitLog, function(err, rows, fields) {
+			if (err) {
+				console.log(err)
+			} else {
+				console.log('intoLimitLog success')
+			};
+		}, params);
+		mq.sendQueueMsg('testQueue', params, (msg) => {
+			//success
+			//console.log(msg)
+			if (msg == 'success') {
+				
+			}
+		})
 
 		if (!req.session.token && (req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
 			let redirect = req.url.indexOf('?') > -1 ? `/login?redirect=${encodeURIComponent(req.url)}` : '/login';

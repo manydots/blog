@@ -4,10 +4,12 @@ var bodyparser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var path = require('path');
 var app = express();
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
 var router = require('./routes/index');
 var { secretKey, cookieMaxAge } = require('./utils/config');
 var port = process.env.port || 3034;
-
+var { initServer } = require('./utils/http');
 var middleware = require('./routes/middleware');
 
 app.use(cookieParser());
@@ -27,6 +29,7 @@ app.use(session({
 	saveUninitialized: false,
 }));
 
+initServer(io);
 //static
 app.use('/static', express.static(path.join(__dirname, 'public')));
 
@@ -49,6 +52,6 @@ app.set("view engine", "ejs");
 //使用路由
 app.use(router);
 
-app.listen(port, () => {
+server.listen(port, () => {
 	console.log('Node Server listening at port %d.', port);
 });

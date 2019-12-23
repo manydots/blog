@@ -9,9 +9,10 @@ var sysUser = {
 	getArticleCount: 'SELECT COUNT(1) AS total FROM article',
 	getFollowLog: 'SELECT article_id,follower FROM article_follow WHERE article_id = ?',
 	intoFollowLog: 'insert into article_follow (article_id,user_id,type,follower,creat_time) values(?,?,?,?,?)',
-	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?'
+	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?',
+	intoLimitLog: 'insert into limit (api,method,ip,creat_time) values(?,?,?,?)'
 };
 
 module.exports = {
-	sysUser: sysUser
+	sysUser: sysUser,
 };
