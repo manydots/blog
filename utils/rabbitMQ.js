@@ -27,7 +27,7 @@ class RabbitMQ {
             })
             .then(function(channel) {
                 return channel.assertQueue(queueName).then(function(ok) {
-                        return channel.sendToQueue(queueName, new Buffer(JSON.stringify(msg)), {
+                return channel.sendToQueue(queueName, Buffer.from(JSON.stringify(msg)), {
                             persistent: true
                         });
                     })

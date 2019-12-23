@@ -177,7 +177,7 @@
     }
 
     function gofollow(id,userId, _this){
-        var num = $(_this).siblings('b').html()*1;
+        //var num = $(_this).siblings('b').html()*1;
         //console.log(_this.getAttribute('data-id'))
         pjaxs({
             url:'/follow',
@@ -186,32 +186,32 @@
                 followed:id,
                 userId:userId
             },
-            headers: {'x-pjax': true},
+            headers: {'x-pjax': false},
         }).then(function(res){
             console.log(res);
             if(res && res.code == 200){
-                $.pjax.reload('html');
-                //window.location.reload();
-                $(_this).siblings('b').html(num+1);
+                //$.pjax.reload('html');
+                window.location.reload();
+                //$(_this).siblings('b').html(num+1);
             }
         });
     };
 
     function gounfollow(id, userId, _this){
-        var num = $(_this).siblings('b').html()*1;
+        //var num = $(_this).siblings('b').html()*1;
         pjaxs({
             url:'/unfollow',
             method:'post',
             data:{
                 unfollowed:id,
             },
-            headers: {'x-pjax': true},
+            headers: {'x-pjax': false},
         }).then(function(res){
             console.log(res)
             if(res && res.code == 200){
-                $.pjax.reload('html');
-                //window.location.reload();
-                $(_this).siblings('b').html(num-1);
+                //$.pjax.reload('html');
+                window.location.reload();
+                //$(_this).siblings('b').html(num-1);
             }
         });
     }

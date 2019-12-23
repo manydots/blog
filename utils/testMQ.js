@@ -10,5 +10,5 @@ let mq = new RabbitMQ();
 // })
 
 mq.receiveQueueMsg('testQueue', (msg) => {
-	console.log(typeof msg,msg)
+	console.log(typeof msg, msg)
 })
