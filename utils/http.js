@@ -1,5 +1,5 @@
-var { RabbitMQ } = require('./rabbitMQ');
-let mq = new RabbitMQ();
+// var { RabbitMQ } = require('./rabbitMQ');
+// let mq = new RabbitMQ();
 
 function initServer(io, callback) {
 	if (io) {
@@ -22,10 +22,9 @@ function initServer(io, callback) {
 			});
 
 			socket.on('Consumer-Queues', function(data) {
-				mq.receiveQueueMsg('testQueue', (msg) => {
-					//console.log(msg)
-					console.log(`[receiveQueueMsg]:success.`);
-				})
+				// mq.receiveQueueMsg('testQueue', (msg) => {
+				// 	console.log(`[receiveQueueMsg]:success.`);
+				// })
 			});
 
 			if (callback) {

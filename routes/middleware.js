@@ -1,10 +1,7 @@
 const { getKeys, getClientIp, formatDate } = require('../utils/index');
 const { sign, verify} = require('../utils/jwt');
-const { RabbitMQ } = require('../utils/rabbitMQ');
 const { sysUser,query } = require('../utils/sql');
 //const { query } = require('../utils/db');
-
-let mq = new RabbitMQ();
 
 function middleware(router) {
 	return router.use((req, res, next) => {
@@ -36,6 +33,7 @@ function middleware(router) {
 
 			//req.session.token && !req.headers['x-pjax'] && req.method == 'POST'
 			//console.log(!req.headers['x-pjax'],req.url)
+			//console.log(res.rabbitMQ)
 			if (req.url !='/') {
 				//console.log(req.url, req.method)
 				let ip = getClientIp(req, 'nginx');
@@ -53,29 +51,31 @@ function middleware(router) {
 					column: 'creat_time'
 				}];
 				//console.log(params)
-				mq.sendQueueMsg('testQueue', params, (msg) => {
-					//success
-					if (msg == 'success') {
-						console.log(`[sendQueueMsg]:success.`);
+				if (res.rabbitMQ) {
+					res.rabbitMQ.sendQueueMsg('testQueue', params, (msg) => {
+						//success
+						if (msg == 'success') {
+							console.log(`[sendQueueMsg]:success.`);
 
-						if (res.ioServer) {
-							//向web前端推送消息
-							res.ioServer.sockets.emit('Queues', {
-								time:formatDate(),
-								newsType: "server-prop-sendQueue",
-								dataType: 'sendQueue'
-							});
+							if (res.ioServer) {
+								//向web前端推送消息
+								res.ioServer.sockets.emit('Queues', {
+									time: formatDate(),
+									newsType: "server-prop-sendQueue",
+									dataType: 'sendQueue'
+								});
+							}
+
+							query(sysUser.intoLimitLog, function(err, rows, fields) {
+								if (err) {
+									//console.log(err)
+								} else {
+									//console.log('intoLimitLog success')
+								};
+							}, params);
 						}
-						
-						query(sysUser.intoLimitLog, function(err, rows, fields) {
-							if (err) {
-								//console.log(err)
-							} else {
-								//console.log('intoLimitLog success')
-							};
-						}, params);
-					}
-				})
+					})
+				}
 			};
 			//console.log(req.indexPage)
 			if (_author) {

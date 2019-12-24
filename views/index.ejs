@@ -8,7 +8,7 @@
     <script src="https://cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script>
     <script src="/static/index.js"></script>
     <script src="/static/doT.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
     <%- include('./header')%>
 </head>
 <body>
@@ -152,19 +152,19 @@
             //onLoadPage(pageIndex + 1,10);
         });
 
-        var socket = io();
-        if(socket){
-            //client发送消息
-            // socket.emit("message", {
-            //     message:'visit join',
-            //     newsType:'client-send'
-            // });
+        // var socket = io();
+        // if(socket){
+        //     //client发送消息
+        //     // socket.emit("message", {
+        //     //     message:'visit join',
+        //     //     newsType:'client-send'
+        //     // });
             
-            //接受后端推送 news 消息
-            socket.on("Queues", function (data) {
-                socket.emit("Consumer-Queues", data);
-            })
-        }
+        //     //接受后端推送 news 消息
+        //     socket.on("Queues", function (data) {
+        //         socket.emit("Consumer-Queues", data);
+        //     })
+        // }
         
         function onLoadPage(pageIndex,pageSize){
             pjaxs({

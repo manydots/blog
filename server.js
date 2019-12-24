@@ -15,13 +15,19 @@ var port = process.env.port || 3034;
 var { initServer } = require('./utils/http');
 var middleware = require('./routes/middleware');
 var keywords = require('./routes/keywords');
+var { RabbitMQ } = require('./utils/rabbitMQ');
+var { scheduleCron } = require('./routes/schedule');
 var results = [];
+let mq = new RabbitMQ();
 
 app.use(cookieParser());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({
 	extended: true
 }));
+
+//定时器开启
+scheduleCron(mq);
 
 //api访问限制20s内60次
 const limiter = rateLimit({
@@ -62,6 +68,7 @@ app.use('/static', express.static(path.join(__dirname, 'public')));
 app.all('*', (req, res, next) => {
 	req.keywords = results;
 	res.ioServer = io;
+	res.rabbitMQ = mq;
 	res.header("Access-Control-Allow-Origin", req.headers.origin);
 	res.header('Access-Control-Allow-Credentials', 'true');
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");
