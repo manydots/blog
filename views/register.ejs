@@ -2,20 +2,91 @@
 <html lang="en">
 <head>
     <title><%= title %></title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="/static/index.js"></script>
     <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+        .w300{
+            width: 320px;
+            overflow: hidden;
+            padding: 10px;
+            margin:0 auto;
+            margin-top: 50px;
+        }
+    </style>
 </head>
 <body>
-    <div id="containers">
-        <form action="/register" method="POST">
-            <input value="" type="text" name="user_name"/>  <br>
-            <input value="" type="password" name="pass_word"/> <br>
-            <input value="" type="text" name="mail"/> <br>
-        	<input type="submit" value="sub"/>
-    	</form>
+    <div class="container-fluid">
+            <div class="w300">
+                <div class="form-horizontal">
+                        <div class="form-group">
+                            <label for="name" class="control-label">账号</label>
+                            <div class="">
+                                <input type="text" class="form-control" id="user_name" placeholder="请输入您的账号">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="control-label">密码</label>
+                            <div class="">
+                                <input type="password" class="form-control" id="pass_word" placeholder="请输入您的密码">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="control-label">邮箱</label>
+                            <div class="">
+                                <input type="text" class="form-control" id="mail" placeholder="请输入您的邮箱">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="">
+                                <button class="btn btn-default btn-block btn-primary btn-login">register</button>
+                            </div>
+                        </div>
+                </div>
+                <div class="alert alert-warning" style="display: none;" role="alert">
+                    
+                </div>
+            </div>
     </div>
 </body>
 <script type="text/javascript">
-
+    $(function(){
+            var redirect = getUrlParam('redirect') || '/';
+            $('.btn-login').on('click',function(){
+                var username = $('#user_name').val();
+                var password = $('#pass_word').val();
+                var mail = $('#mail').val();
+                if(username == '' || password == '' || mail == ''){
+                    $('.alert-warning').html('请输入您的账号、密码、邮箱');
+                    $('.alert-warning').show();
+                    return;
+                }else{
+                    $('.alert-warning').hide();
+                    onRegister(username,password,mail);
+                }
+            })
+            function onRegister(username,password,mail){
+                pjaxs({
+                url:'/register',
+                method:'post',
+                data:{
+                    user_name:username,
+                    pass_word:password,
+                    mail:mail
+                },
+                }).then(function(res){
+                    console.log(res)
+                    if(res && res.code == 200){
+                        $('.alert-warning').hide();
+                        window.location.href = redirect;
+                    }else{
+                        $('.alert-warning').html(res.msg);
+                        $('.alert-warning').show();
+                    }
+                });
+            }
+    })
 </script>
 </html>

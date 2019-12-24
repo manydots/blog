@@ -3,6 +3,7 @@
 <head>
     <title><%= title %></title>
     <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script>
     <script src="/static/index.js"></script>
@@ -15,8 +16,13 @@
     
     <div class="blog-article w990">
         <div class="blog-news wp100">
-            最新文章 >>
+            
         </div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">最新文章 >></li>
+          </ol>
+        </nav>
         <div class="w770 fl">
             <div class="blog-article-result">
                 <% if (result.length) { %>
@@ -31,7 +37,7 @@
                         <div class="article-author">
                             作者：<%= item.author %> 
                             修改时间：<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
-                            <span class="tags">
+                            <span class="badge badge-pill badge-info">
                                 <%= item.tags %>    
                             </span>
                         </div>
@@ -66,8 +72,17 @@
                     <% }) %>
                 </ul>
                 <% } %>
+                <!-- <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title">Card title</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                    <a href="#" class="card-link">Card link</a>
+                    <a href="#" class="card-link">Another link</a>
+                    </div>
+                </div> -->
             </div>
-            <div class="pagination">
+            <div class="paginations">
                 <% if (page.pageCount > 1) { %>
                     <span data-page="1" class="firstPage pagination-list">
                         <a href="/?pageIndex=1&pageSize=<%= page.pageSize %>" data-spm-disabled="true" >首页</a>
@@ -140,14 +155,14 @@
         var socket = io();
         if(socket){
             //client发送消息
-            socket.emit("http-index-message", {
-                message:'visit join',
-                newsType:'client-send'
-            });
+            // socket.emit("message", {
+            //     message:'visit join',
+            //     newsType:'client-send'
+            // });
             
             //接受后端推送 news 消息
-            socket.on("news", function (data) {
-                console.log(data)
+            socket.on("Queues", function (data) {
+                socket.emit("Consumer-Queues", data);
             })
         }
         
@@ -159,7 +174,7 @@
                     pageIndex:pageIndex || 1,
                     pageSize:pageSize || 10
                 },
-                headers: {'x-pjax': true},
+                headers: {'x-pjax': false},
             }).then(function(res){
                 console.log(res)
                 if(res && res.code == 200){
@@ -193,6 +208,8 @@
                 //$.pjax.reload('html');
                 window.location.reload();
                 //$(_this).siblings('b').html(num+1);
+            }else if(res.code == -305){
+                window.location.href = '/login';
             }
         });
     };

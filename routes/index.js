@@ -14,6 +14,8 @@ router.get('/', function(request, response) {
 	let pageIndex = request.indexPage.pageIndex;
 	let pageSize = request.indexPage.pageSize || 10;
 	//console.log(request.checkUser)
+	//console.log(request.keywords)
+	//console.log(request.session.token)
 	query(sysUser.getArticleCount, function(err, rows, fields) {
 		if (err) {
 			response.json({
@@ -35,11 +37,11 @@ router.get('/', function(request, response) {
 					});
 				} else {
 					response.render('index', {
-						title: '首页',
+						title: 'Blog where are u.',
 						result: rows,
 						fmt: formatDate,
 						diff: dateDiff,
-						token: request.session.token ? {
+						token: request.session.token && request.session.token != undefined ? {
 							userName: request.session.userName,
 							userId: request.session.userId
 						} : null,
@@ -60,20 +62,20 @@ router.get('/', function(request, response) {
 router.get('/login', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('login', {
-		title: 'login'
+		title: '登录账号'
 	})
 });
 
 router.get('/register', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('register', {
-		title: 'register'
+		title: '注册账号'
 	})
 });
 
 router.get('/send', function(request, response) {
 	response.render('send', {
-		title: 'send发送邮件'
+		title: '发送邮件'
 	})
 });
 
@@ -110,7 +112,7 @@ router.get('/a/:articleId', function(request, response) {
 
 
 router.post('/login', function(request, response) {
-	//console.log(request.body.redirect)
+	//console.log(request.body)
 	let params = [{
 		values: request.body.user_name,
 		column: 'user_name'
@@ -166,8 +168,13 @@ router.post('/login', function(request, response) {
 					maxAge: 60 * 1000 * 15, //有效期设置15分钟
 				});
 				//重定向redirect
-				let redirect = !request.body.redirect || request.body.redirect == '' ? '/' : decodeURIComponent(request.body.redirect);
-				response.redirect(redirect);
+				//let redirect = !request.body.redirect || request.body.redirect == '' ? '/' : decodeURIComponent(request.body.redirect);
+				//response.redirect(redirect);
+
+				response.json({
+					code: 200,
+					msg: '操作成功'
+				});
 			}
 		};
 	}, params);
@@ -175,57 +182,27 @@ router.post('/login', function(request, response) {
 
 router.post('/', function(request, response) {
 
-	let pageIndex = parseInt(request.body.pageIndex) || 1;
-	let pageSize = parseInt(request.body.pageSize) || 10;
-
-	query(sysUser.getArticleCount, function(err, rows, fields) {
-		if (err) {
-			response.json({
-				code: -101,
-				msg: '数据库getArticleCount错误！'
-			});
-		} else {
-			let totals = rows[0].total;
-			let params = [{
-				values: (pageIndex - 1) * pageSize
-			}, {
-				values: pageSize,
-			}];
-			query(sysUser.getArticleAll, function(err, rows, fields) {
-				if (err) {
-					response.json({
-						code: -101,
-						msg: '数据库getArticleAll错误！'
-					});
-				} else {
-
-					response.json({
-						result: rows,
-						code: 200,
-						page: {
-							total: totals,
-							pageIndex: pageIndex,
-							pageSize: pageSize,
-							pageCount: Math.ceil(totals / pageSize)
-						}
-					})
-				};
-			}, params);
-		};
-	});
-
 });
 
-
-router.post('/logout', function(request, response) {
+router.post('/loginout', function(request, response) {
 	request.session.destroy();
 	response.clearCookie('_token');
 	response.clearCookie('_checkToken');
-	response.redirect('/');
+	//response.redirect('/');
+	response.json({
+		code: 200,
+		msg: '操作成功'
+	});
 });
 
 router.post('/publish', function(request, response) {
-
+	if (!request.session.token) {
+		response.json({
+			code: -305,
+			msg: '未登录'
+		});
+		return;
+	};
 	let params = [{
 		values: request.checkUser.userName,
 		column: 'author'
@@ -234,12 +211,15 @@ router.post('/publish', function(request, response) {
 		column: 'user_id'
 	}, {
 		values: request.body.title,
+		filterKeyWords: request.keywords,
 		column: 'title',
 	}, {
 		values: request.body.context,
+		filterKeyWords: request.keywords,
 		column: 'context'
 	}, {
 		values: request.body.tags,
+		filterKeyWords: request.keywords,
 		column: 'tags'
 	}, {
 		values: formatDate(),
@@ -251,10 +231,14 @@ router.post('/publish', function(request, response) {
 	query(sysUser.edit, function(err, rows, fields) {
 		if (err) {
 			//console.log(err)
+			response.json({
+				code: -304,
+				msg: '文章发布失败！'
+			});
 		} else {
 			response.json({
 				code: 200,
-				msg: '发布成功！'
+				msg: '文章发布成功！'
 			});
 		};
 	}, params)
@@ -278,6 +262,23 @@ router.post('/register', function(request, response) {
 			msg: '密码位数不足，4位以上',
 			type: 'user_register_password_error'
 		})
+		return;
+	}
+	let isContainKeyWord = false;
+	if (request.body.user_name) {
+		for (let v of request.keywords) {
+			if (request.body.user_name.indexOf(v) > -1) {
+				isContainKeyWord = true;
+				break;
+			}
+		}
+	}
+	if (isContainKeyWord) {
+		response.json({
+			code: -304,
+			msg: '用户名包含敏感字符',
+			type: 'user_register_username_error'
+		});
 		return;
 	}
 
@@ -362,7 +363,7 @@ router.post('/sendMail', function(request, response) {
 			sendMails(to, sendHtml, function(res) {
 				if (res && res.response.indexOf('250 Ok') > -1) {
 					response.json({
-						code: 0,
+						code: 200,
 						msg: '邮件发送成功'
 					});
 				} else {
@@ -586,5 +587,23 @@ router.post('/unfollow', function(request, response) {
 		}, unfollowed);
 	}
 
+});
+
+
+router.post('/hots', function(request, response) {
+
+
+	query(sysUser.edit, function(err, rows, fields) {
+		if (err) {
+			//console.log(err)
+		} else {
+			response.json({
+				code: 200,
+				msg: '发布成功！'
+			});
+		};
+	})
+
 })
+
 module.exports = router;

@@ -1,3 +1,5 @@
+var { RabbitMQ } = require('./rabbitMQ');
+let mq = new RabbitMQ();
 
 function initServer(io, callback) {
 	if (io) {
@@ -15,19 +17,15 @@ function initServer(io, callback) {
 				//console.log(`---Left.---`)
 			});
 
-			socket.on('http-index-message', function(data) {
-				//x-real-ip x-forwarded-for 通过nginx后的真实ip
-				//console.log(socket.handshake.headers)
-				//仅[127.0.0.1:3035,music.jeeas.cn]
-				if (socket.handshake.headers.host == '127.0.0.1:3035') {
-					
-				} else {
-					socket.emit('songs', {
-						code: -103,
-						msg: 'ip-limit.'
-					});
-				}
+			socket.on('message', function(data) {
+				//console.log(data)
+			});
 
+			socket.on('Consumer-Queues', function(data) {
+				mq.receiveQueueMsg('testQueue', (msg) => {
+					//console.log(msg)
+					console.log(`[receiveQueueMsg]:success.`);
+				})
 			});
 
 			if (callback) {
@@ -35,7 +33,6 @@ function initServer(io, callback) {
 			}
 		});
 	}
-
 }
 
 module.exports = {

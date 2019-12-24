@@ -11,7 +11,7 @@ function pjaxs(options) {
       },
       success: function(res) {
         if (resolve) {
-          if (!options.headers['x-pjax']) {
+          if (!options.headers || !options.headers['x-pjax']) {
             resolve(stringToObject(res));
           } else {
             resolve(res);

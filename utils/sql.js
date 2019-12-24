@@ -10,9 +10,14 @@ var sysUser = {
 	getFollowLog: 'SELECT article_id,follower FROM article_follow WHERE article_id = ?',
 	intoFollowLog: 'insert into article_follow (article_id,user_id,type,follower,creat_time) values(?,?,?,?,?)',
 	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?',
-	intoLimitLog: 'insert into limited (api,method,ip,creat_time) values(?,?,?,?)'
+	intoLimitLog: 'insert into limited (api,method,ip,creat_time) values(?,?,?,?)',
+	getKeyWords: 'SELECT context FROM keywords',
+	getHotArticle:''
 };
+
+var { query } = require('./db');
 
 module.exports = {
 	sysUser: sysUser,
+	query: query
 };

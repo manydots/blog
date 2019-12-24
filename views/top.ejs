@@ -1,15 +1,46 @@
 <div class="blog-top">
 	<div class="blog-top-content w990">
+        <ul class="nav nav-pills">
     	<% if(token) { %>
-    		<span class="fl">欢迎：<%= token.userName %>！</span>
-    		<form action="/logout" method="POST" class="fl">
-        		<input type="submit" value="退出"/>
-    		</form>
+            <li class="nav-item">
+                <a class="nav-link disabled" tabindex="-1" aria-disabled="true" href="javascript:;">
+                    你好：<%= token.userName %>！</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link active loginout" href="javascript:;">退出</a>
+            </li>
     	<% } else { %>
-    		<span class="fl">你好，游客！</span>
-			<span class="fl ml10"><a href="/login">去登陆</a></span>
+            <li class="nav-item">
+                <a class="nav-link active" href="/login">去登陆</a>
+            </li>
     	<% } %>
-			<span class="fl ml10"><a href="/send" target="_blank">发邮件</a></span>
-			<span class="fl ml10"><a href="/edit" target="_blank">发布文章</a></span>
+            <li class="nav-item">
+                <a class="nav-link" href="/send">写邮件</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="/edit">写文章</a>
+            </li>
+        </ul>
 	</div>
 </div>
+<script type="text/javascript">
+    $(function(){
+            var redirect = getUrlParam('redirect') || '/';
+            $('.loginout').on('click',function(){
+                  loginout();
+            })
+            function loginout(){
+                pjaxs({
+                url:'/loginout',
+                method:'post',
+                }).then(function(res){
+                    console.log(res)
+                    if(res && res.code == 200){
+                        window.location.reload();
+                    }
+                });
+            }
+    })
+</script>

@@ -22,8 +22,15 @@ function query(sql, callback, identifiers) {
 					identifiers = identifiers.map(function(val, index) {
 						if (val.encryption && val.encryption == true) {
 							return MD5(val.values)
+						} else if (val.filterKeyWords) {
+							if (val.filterKeyWords) {
+								val.filterKeyWords.map(function(v){
+									val.values = val.values.replace(v,'*');
+								});
+							}
+							return val.values;
 						} else {
-							return val.values
+							return val.values;
 						}
 					})
 				}

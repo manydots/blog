@@ -2,22 +2,80 @@
 <html lang="en">
 <head>
     <title><%= title %></title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="/static/index.js"></script>
     <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+        .w300{
+            width: 320px;
+            overflow: hidden;
+            padding: 10px;
+            margin:0 auto;
+            margin-top: 50px;
+        }
+    </style>
 </head>
 <body>
-    <div id="containers">
-        <form action="/sendMail" method="POST">
-            <input value="1191441460@qq.com" type="text" name="to"/>  <br>
-            <input value="admin123" type="text" name="sendHtml"/> <br>
-        	<input type="submit" value="sub"/>
-    	</form>
+    <div class="container-fluid">
+            <div class="w300">
+                <div class="form-horizontal">
+                        <div class="form-group">
+                            <label for="name" class="control-label">收件邮箱</label>
+                            <div class="">
+                                <input type="text" class="form-control" id="to" placeholder="收件邮箱">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="control-label">邮件内容</label>
+                            <div class="">
+                                <textarea class="form-control" id="sendHtml" placeholder="邮件内容" aria-label="请输入邮件内容"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="">
+                                <button class="btn btn-default btn-block btn-primary btn-Send-Mail">Send Mail</button>
+                            </div>
+                        </div>
+                </div>
+                <div class="alert alert-warning" style="display: none;" role="alert">
+                    
+                </div>
+            </div>
     </div>
 </body>
 <script type="text/javascript">
-	window.onload = function() {
-		var dom = document.querySelector('.redirect');
-		console.log(dom)
-	}
+    $(function(){
+
+            $('.btn-Send-Mail').on('click',function(){
+                var to = $('#to').val();
+                var sendHtml = $('#sendHtml').val();
+                if(to == '' || sendHtml == ''){
+                    $('.alert-warning').html('请输入收件邮箱或者邮件内容');
+                    $('.alert-warning').show();
+                    return;
+                }else{
+                    $('.alert-warning').hide();
+                    onSendMail(to,sendHtml);
+                }
+            })
+            function onSendMail(to,sendHtml){
+                pjaxs({
+                url:'/sendMail',
+                method:'post',
+                data:{
+                    to:to,
+                    sendHtml:sendHtml
+                },
+                }).then(function(res){
+                    console.log(res)
+                    if(res){
+                       $('.alert-warning').html(res.msg);
+                       $('.alert-warning').show();
+                    }
+                });
+            }
+    })
 </script>
 </html>
