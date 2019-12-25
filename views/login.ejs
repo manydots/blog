@@ -76,6 +76,9 @@
                     //console.log(res)
                     if(res && res.code == 200){
                         window.location.href = redirect;
+                    }else{
+                        $('.alert-warning').html(res.msg);
+                        $('.alert-warning').show();
                     }
                 });
             }

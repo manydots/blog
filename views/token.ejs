@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= title %></title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+    </style>
+</head>
+<body>
+     <div class="container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">
+            	<%= title %><% if (token) { %> <%= token.mail %> <% } %>		
+            </li>
+          </ol>
+        </nav>
+        <div class="row">
+            <div class="col-md-10">
+            	<div class="media blog-article-list-li mb10 bordernone" >
+            		<div class="media-body">
+	            		<h5 class="mt-0 article-title" style="font-size: 12px;color: #666;">
+							<%= msg %>
+	            		</h5>
+			        </div>
+		        </div>
+            </div>
+        </div>
+     </div>
+</body>
+</html>
+<script type="text/javascript">
+	var code = <% if(code) { %><%=code %><% } else { %>100<% } %>;
+	window.onload = function() {
+		setTimeout(function(){
+			if(code){
+				window.location.href = '/login';
+			}
+			// if(code == 200){
+			// 	window.location.href = '/login';
+			// }else{
+			// 	window.location.href = '/register';
+			// }
+        },2500);
+	}
+</script>

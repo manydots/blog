@@ -1,6 +1,6 @@
 var sysUser = {
 	queryAll: 'SELECT * FROM sys_user',
-	getUserByUserName: 'SELECT * FROM sys_user WHERE user_name = ? ',
+	getUserByUserName: 'SELECT user_name FROM sys_user WHERE user_name = ? ',
 	checkUser: 'SELECT * FROM sys_user WHERE user_name = ? and pass_word = ?',
 	into: 'insert into sys_user (user_name,pass_word,mail,creat_time) values(?,?,?,?)',
 	edit: 'insert into article (author,user_id,title,context,tags,creat_time,modify_time) values(?,?,?,?,?,?,?)',
@@ -12,7 +12,8 @@ var sysUser = {
 	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?',
 	intoLimitLog: 'insert into limited (api,method,ip,creat_time) values(?,?,?,?)',
 	getKeyWords: 'SELECT context FROM keywords',
-	getHotArticle:''
+	getHotArticle:'',
+	updateUser: 'UPDATE sys_user SET token = ? WHERE id = ?',
 };
 
 var { query } = require('./db');

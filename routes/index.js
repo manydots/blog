@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { query } = require('../utils/db');
-const { sysUser } = require('../utils/sql');
-const { sign } = require('../utils/jwt');
+const { sysUser,query } = require('../utils/sql');
+const { sign,verify } = require('../utils/jwt');
 const { cookieMaxAge } = require('../utils/config');
-const { formatDate,dateDiff,curryingCheck,isContain} = require('../utils/index');
+const { formatDate,dateDiff,curryingCheck} = require('../utils/index');
 const { sendMails } = require('../utils/sendMail');
 
 var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
@@ -16,6 +15,7 @@ router.get('/', function(request, response) {
 	//console.log(request.checkUser)
 	//console.log(request.keywords)
 	//console.log(request.session.token)
+
 	query(sysUser.getArticleCount, function(err, rows, fields) {
 		if (err) {
 			response.json({
@@ -37,11 +37,11 @@ router.get('/', function(request, response) {
 					});
 				} else {
 					response.render('index', {
-						title: 'Blog where are you.',
+						title: 'Blogers, Where Are You.',
 						result: rows,
 						fmt: formatDate,
 						diff: dateDiff,
-						token: request.session.token && request.session.token != undefined ? {
+						token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 							userName: request.session.userName,
 							userId: request.session.userId
 						} : null,
@@ -63,7 +63,7 @@ router.get('/login', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('login', {
 		title: '登录账号',
-		token: request.session.token && request.session.token != undefined ? {
+		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 			userName: request.session.userName,
 			userId: request.session.userId
 		} : null,
@@ -74,7 +74,7 @@ router.get('/register', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('register', {
 		title: '注册账号',
-		token: request.session.token && request.session.token != undefined ? {
+		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 			userName: request.session.userName,
 			userId: request.session.userId
 		} : null,
@@ -84,7 +84,7 @@ router.get('/register', function(request, response) {
 router.get('/send', function(request, response) {
 	response.render('send', {
 		title: '发送邮件',
-		token: request.session.token && request.session.token != undefined ? {
+		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 			userName: request.session.userName,
 			userId: request.session.userId
 		} : null,
@@ -94,7 +94,7 @@ router.get('/send', function(request, response) {
 router.get('/edit', function(request, response) {
 	response.render('edit', {
 		title: '发布文章',
-		token: request.session.token && request.session.token != undefined ? {
+		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 			userName: request.session.userName,
 			userId: request.session.userId
 		} : null,
@@ -114,7 +114,7 @@ router.get('/a/:articleId', function(request, response) {
 				response.render('error', {
 					title: '文章不存在',
 					result: '文章不存在',
-					token: request.session.token && request.session.token != undefined ? {
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 						userName: request.session.userName,
 						userId: request.session.userId
 					} : null,
@@ -124,7 +124,7 @@ router.get('/a/:articleId', function(request, response) {
 					title: rows[0].title,
 					result: rows[0],
 					fmt: formatDate,
-					token: request.session.token && request.session.token != undefined ? {
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 						userName: request.session.userName,
 						userId: request.session.userId
 					} : null,
@@ -134,9 +134,57 @@ router.get('/a/:articleId', function(request, response) {
 	}, request.params.articleId);
 });
 
+router.get('/token/:tokens', function(request, response) {
+	let tokens = request.params.tokens;
+	if (tokens && tokens != '') {
+		verify(tokens, function(err, decode) {
+			if (err) {
+				response.render('token', {
+					title: '邮箱激活-邮件已过期',
+					code: -504,
+					msg: '邮件已过期',
+					token:null
+				})
+			} else {
+				let params = [{
+					values: 'SUCCESS',
+					column: 'token'
+				}, {
+					values: decode.userId,
+					column: 'id'
+				}];
+				query(sysUser.updateUser, function(err, rows, fields) {
+					if (err) {
+						//console.log(err)
+						response.render('token', {
+							title: '数据库错误',
+							code: -101,
+							msg: '数据库updateUser错误！',
+							token: decode
+						});
+					} else {
+						response.render('token', {
+							title: '邮箱已激活-邮箱激活成功',
+							code: 200,
+							msg: '邮箱激活成功！',
+							token: decode
+						});
+					};
+				}, params);
+				
+			}
+		})
+	} else {
+		response.render('token', {
+			code: -501,
+			title: '邮箱激活-参数异常',
+			msg:'参数异常',
+			token:null
+		})
+	}
+});
 
 router.post('/login', function(request, response) {
-	//console.log(request.body)
 	let params = [{
 		values: request.body.user_name,
 		column: 'user_name'
@@ -156,7 +204,7 @@ router.post('/login', function(request, response) {
 		if (err) {
 			response.json({
 				code: -101,
-				msg: '数据库错误！'
+				msg: '数据库checkUser错误！'
 			})
 			//console.log(err)
 		} else {
@@ -171,6 +219,38 @@ router.post('/login', function(request, response) {
 						code: -303,
 						msg: '账号已被封停，请联系客服'
 					});
+					return;
+				}
+				if(rows[0].token == null || rows[0].token == ''){
+					let _tokenMail = sign({
+						token: {
+							userId: rows[0].id,
+							mail:rows[0].mail,
+							userName: rows[0].user_name,
+						},
+						option: {
+							expiresIn: 60 * 15 // 15分钟过期
+						}
+					});
+					//console.log(_tokenMail);
+					//https://blog.jeeas.cn
+					let visitUrl = request.headers.origin.indexOf('127.0.0.1') > -1 ? 'http://127.0.0.1:3035':'https://blog.jeeas.cn';
+					let sendHtml = `<a class="nav-link" href="${visitUrl}/token/${_tokenMail}" target="_blank">点击激活，15分钟有效</a>`;
+					sendMails(rows[0].mail, sendHtml, function(res) {
+						if (res && res.response.indexOf('250 Ok') > -1) {
+							console.log('激活邮件发送成功')
+						} else {
+							console.log('激活邮件发送失败')
+						}
+					});
+					response.json({
+						code: -304,
+						msg: `邮箱未激活！请激活后重试！邮件已发送到${rows[0].mail}，15分钟内有效`,
+						token:{
+							mail:rows[0].mail
+						}
+					});
+
 					return;
 				}
 				request.session.userName = rows[0].user_name;
@@ -209,6 +289,7 @@ router.post('/', function(request, response) {
 });
 
 router.post('/loginout', function(request, response) {
+	request.checkUser = undefined;
 	request.session.destroy();
 	response.clearCookie('_token');
 	response.clearCookie('_checkToken');
@@ -351,7 +432,7 @@ router.post('/register', function(request, response) {
 						} else {
 							response.json({
 								code: 200,
-								msg: '注册成功'
+								msg: `账号注册成功！激活邮件在登录时发送到${request.body.mail}`
 							})
 						};
 					}, params);

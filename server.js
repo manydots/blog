@@ -41,8 +41,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-//cache 缓存2分钟  2 minutes  0.05 minutes=3s
-app.use(cache('0.05 minutes', ((req, res) => res.statusCode === 200)));
+//cache 缓存2分钟  2 minutes  0.05 minutes=3s 0.02 minutes = 1.2s
+//缓存时间过大会影响清除session,部分API
+app.use(cache('0.02 minutes', ((req, res) => res.statusCode === 200)));
 
 //加载敏感关键词
 keywords(function(rows){

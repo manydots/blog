@@ -83,8 +83,12 @@
                 }).then(function(res){
                     console.log(res)
                     if(res && res.code == 200){
-                        $('.alert-warning').hide();
-                        window.location.href = redirect;
+                        $('.alert-warning').html(res.msg);
+                        $('.alert-warning').show();
+                        setTimeout(function(){
+                           window.location.href = redirect;
+                        },1500)
+                        
                     }else{
                         $('.alert-warning').html(res.msg);
                         $('.alert-warning').show();
