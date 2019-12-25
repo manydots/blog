@@ -2,13 +2,42 @@
 <html lang="en">
 <head>
     <title><%= title %> - 个人文章</title>
+    <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/static/index.js"></script>
     <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+    </style>
 </head>
 <body>
     <% if (result) { %>
-        <h2><%= result.title %></h2>
-        <div>作者：<%= result.author %> 修改时间：<%= fmt(result.modify_time) %> 标签：<%= result.tags %></div>
-        <div>内容：<%= result.context %></div>
+     <div class="container">
+     	<%- include('./top')%>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">详情 >></li>
+          </ol>
+        </nav>
+        <div class="row">
+            <div class="col-md-9">
+            	<div class="media blog-article-list-li mb10 bordernone" >
+            		<div class="media-body">
+				        <p class="article-author">作者：<%= result.author %> 最近修改：<%= fmt(result.modify_time) %>
+				        	<span class="badge badge-pill badge-info"><%= result.tags %></span>
+	                    </p>
+	                    <h5 class="mt-0 article-title"><%= result.title %></h5>
+				        <p class="article-context"><%= result.context %></p>
+			        </div>
+		        </div>
+            </div>
+            <div class="col-md-3">
+				右侧占位col-md-3
+            </div>
+        </div>
+        <%- include('./footer')%>
+     </div>
     <% } %>
 </body>
 </html>

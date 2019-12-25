@@ -37,7 +37,7 @@ router.get('/', function(request, response) {
 					});
 				} else {
 					response.render('index', {
-						title: 'Blog where are u.',
+						title: 'Blog where are you.',
 						result: rows,
 						fmt: formatDate,
 						diff: dateDiff,
@@ -62,26 +62,42 @@ router.get('/', function(request, response) {
 router.get('/login', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('login', {
-		title: '登录账号'
+		title: '登录账号',
+		token: request.session.token && request.session.token != undefined ? {
+			userName: request.session.userName,
+			userId: request.session.userId
+		} : null,
 	})
 });
 
 router.get('/register', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('register', {
-		title: '注册账号'
+		title: '注册账号',
+		token: request.session.token && request.session.token != undefined ? {
+			userName: request.session.userName,
+			userId: request.session.userId
+		} : null,
 	})
 });
 
 router.get('/send', function(request, response) {
 	response.render('send', {
-		title: '发送邮件'
+		title: '发送邮件',
+		token: request.session.token && request.session.token != undefined ? {
+			userName: request.session.userName,
+			userId: request.session.userId
+		} : null,
 	})
 });
 
 router.get('/edit', function(request, response) {
 	response.render('edit', {
-		title: '发布文章'
+		title: '发布文章',
+		token: request.session.token && request.session.token != undefined ? {
+			userName: request.session.userName,
+			userId: request.session.userId
+		} : null,
 	})
 });
 
@@ -92,18 +108,26 @@ router.get('/a/:articleId', function(request, response) {
 
 	query(sysUser.getArticleById, function(err, rows, fields) {
 		if (err) {
-			console.log(err)
+			//console.log(err)
 		} else {
 			if (rows.length <= 0) {
 				response.render('error', {
 					title: '文章不存在',
-					result: '文章不存在'
+					result: '文章不存在',
+					token: request.session.token && request.session.token != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null,
 				})
 			} else {
 				response.render('article', {
 					title: rows[0].title,
 					result: rows[0],
-					fmt: formatDate
+					fmt: formatDate,
+					token: request.session.token && request.session.token != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null,
 				})
 			}
 		};

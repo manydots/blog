@@ -1,14 +1,21 @@
-<div class="blog-top">
-	<div class="blog-top-content w990">
+<script src="https://cdn.bootcss.com/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<div class="blog-top pt-2 pb-2">
+	<div class="blog-top-content">
         <ul class="nav nav-pills">
     	<% if(token) { %>
             <li class="nav-item">
-                <a class="nav-link disabled" tabindex="-1" aria-disabled="true" href="javascript:;">
-                    你好：<%= token.userName %>！</a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link active loginout" href="javascript:;">退出</a>
+                <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false">
+                   <%= token.userName %>！
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="javascript:;">文章列表</a>
+                    <span class="dropdown-item-text">item text</span>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item loginout" href="javascript:;">退出</a>
+                  </div>
+                </div>
             </li>
     	<% } else { %>
             <li class="nav-item">
@@ -16,11 +23,13 @@
             </li>
     	<% } %>
             <li class="nav-item">
+                <a class="nav-link" href="/edit">写文章</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="/send">写邮件</a>
             </li>
-
             <li class="nav-item">
-                <a class="nav-link" href="/edit">写文章</a>
+                <a class="nav-link" href="/">首页</a>
             </li>
         </ul>
 	</div>
@@ -29,7 +38,7 @@
     $(function(){
             var redirect = getUrlParam('redirect') || '/';
             $('.loginout').on('click',function(){
-                  loginout();
+                loginout();
             })
             function loginout(){
                 pjaxs({

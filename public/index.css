@@ -14,7 +14,12 @@ pre {
 input:-webkit-autofill {
 	box-shadow: 0 0 0px 1000px white inset !important;
 }
-
+.mbn{
+	margin-bottom: 0;
+}
+.bordernone{
+	border:none !important;
+}
 .tac {
 	text-align: center;
 }
@@ -105,6 +110,7 @@ input:-webkit-autofill {
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 2;
 	overflow: hidden;
+	text-decoration:none;
 }
 
 .blog-article-list-li .article-author {
@@ -163,7 +169,7 @@ input:-webkit-autofill {
     color: #3089dc;
     cursor: default;
 }
-.blog-advertisement .blog-advertisement-in {
+.blog-advertisement-in {
 	border: 1px solid #ececec;
 	padding: 8px;
 	overflow: hidden;
@@ -173,9 +179,7 @@ input:-webkit-autofill {
 
 .blog-top {
 	width: 100%;
-	height: 50px;
 	border-bottom: 1px solid #ececec;
-	margin-top: 10px;
 }
 
 .blog-footer {
@@ -191,7 +195,6 @@ input:-webkit-autofill {
 
 .blog-footer .blog-footer-in {
 	padding: 20px 5px;
-	width: 990px;
 	margin: 0 auto;
 }
 

@@ -2,13 +2,39 @@
 <html lang="en">
 <head>
     <title><%= title %></title>
+    <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="/static/index.js"></script>
     <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+    </style>
 </head>
 <body>
-    <%= result %>
-</body>
-<script type="text/javascript">
+    <% if (result) { %>
+     <div class="container">
+     	<%- include('./top')%>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">详情 >></li>
+          </ol>
+        </nav>
+        <div class="row">
+            <div class="col-md-9">
+            	<div class="media blog-article-list-li mb10 bordernone" >
+            		<div class="media-body">
+	            	<h5 class="mt-0 article-title"><%= result %></h5>
+			        </div>
+		        </div>
+            </div>
+            <div class="col-md-3">
 
-</script>
+            </div>
+        </div>
+        
+        <%- include('./footer')%>
+     </div>
+    <% } %>
+</body>
 </html>

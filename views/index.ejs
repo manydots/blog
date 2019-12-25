@@ -5,72 +5,64 @@
     <link rel="stylesheet" type="text/css" href="/static/index.css">
     <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script>
+    <!-- <script src="https://cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script> -->
     <script src="/static/index.js"></script>
     <script src="/static/doT.min.js"></script>
     <!-- <script src="/socket.io/socket.io.js"></script> -->
     <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+    </style>
 </head>
 <body>
-    <%- include('./top')%>
-    
-    <div class="blog-article w990">
-        <div class="blog-news wp100">
-            
-        </div>
-        <nav aria-label="breadcrumb">
+    <div class="container">
+        <%- include('./top')%>
+        <nav class="mt-2" aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item active" aria-current="page">最新文章 >></li>
           </ol>
         </nav>
-        <div class="w770 fl">
-            <div class="blog-article-result">
+        <div class="row">
+            <div class="col-md-9">
                 <% if (result.length) { %>
-                 <ul class="blog-article-list">
+
                     <% result.forEach(function(item,index){ %>
-                      <li class="blog-article-list-li mb10">
-
-                        <div class="article-title"><%= item.title %></div>
-                        <div class="article-context">
-                            <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
+                    <div class="media blog-article-list-li mb10" >
+                        <div class="align-self-start mr-3" style="width: 60px;height: 60px;">
+                            <img src="/static/head.png"  style="display: block;width: 100%;" alt="...">
                         </div>
-                        <div class="article-author">
-                            作者：<%= item.author %> 
-                            修改时间：<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
-                            <span class="badge badge-pill badge-info">
-                                <%= item.tags %>    
-                            </span>
-                        </div>
-                        <div class="article-follow">
+                        <div class="media-body">
+                            <h5 class="mt-0 article-title"><%= item.title %></h5>
+                            <p class="article-context">
+                                <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
+                            </p>
+                            <p class="article-author mbn">
+                                作者:<%= item.author %> 
+                                最近修改:<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
+                                <span class="badge badge-pill badge-info">
+                                    <%= item.tags %> 
+                                </span>
+                            </p>
+                            <p class="article-follow mbn">
                             <b><% if(item.follower) { %><%= item.follower.split(',').length -1 %><% } else { %>0<% } %></b>人已赞
-
                             <% if(token) { %>
-
                                 <% if(item.follower) { %>
-
                                     <% if(item.follower.indexOf(token.userId) > -1) { %>
                                         <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gounfollow(<%=item.id%>,<%=item.user_id%>,this)">取消点赞</span>
                                     <% } else { %>
                                         <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
                                     <% } %>
-
                                 <% } else { %>
                                     <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
                                 <% } %>
-                                
-
                             <% } else { %>
-
                                 <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
-                                
                             <% } %>
-                            
-
-                            
+                            </p>
                         </div>
-                      </li>
+                    </div>
                     <% }) %>
-                </ul>
+           
                 <% } %>
                 <!-- <div class="card">
                   <div class="card-body">
@@ -82,7 +74,32 @@
                     </div>
                 </div> -->
             </div>
-            <div class="paginations">
+            <div class="col-md-3 mb10">
+                <div class="blog-advertisement-in">
+                    这里是普通占位~可放广告或者其他热搜文章
+                    <div id="pjax-container">pjax-container</div> 
+                </div>
+            </div>
+            
+        </div>
+        <% if (page.pageCount > 1) { %>
+        <nav aria-label="...">
+          <ul class="pagination">
+            <li class="page-item">
+              <a href="/?pageIndex=1&pageSize=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >首页</a>
+            </li>
+            <% for(var i=1;i<=page.pageCount;i++){%>
+                <li data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>active<% } %> page-item" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
+                    <a class="page-link" href="javascript:;"><%= i %><span class="sr-only">(current)</span></a>
+                </li> 
+            <% } %>
+            <li class="page-item">
+              <a href="/?pageIndex=<%= page.pageCount %>&pageSize=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >尾页</a>
+            </li>
+          </ul>
+        </nav>
+        <% } %>
+        <!-- <div class="paginations" style="clear: both;">
                 <% if (page.pageCount > 1) { %>
                     <span data-page="1" class="firstPage pagination-list">
                         <a href="/?pageIndex=1&pageSize=<%= page.pageSize %>" data-spm-disabled="true" >首页</a>
@@ -90,35 +107,25 @@
                     <% for(var i=1;i<=page.pageCount;i++){%>
                         <span data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>current<% } %> normal pagination-list" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
                             <%= i %>
-                            <!-- <a href="<% if(i == page.pageIndex) { %>javascript:;<% } else { %>/?pageIndex=<%= i %>&pageSize=<%= page.pageSize %><% } %>"><%= i %></a> -->
+                            <a href="<% if(i == page.pageIndex) { %>javascript:;<% } else { %>/?pageIndex=<%= i %>&pageSize=<%= page.pageSize %><% } %>"><%= i %></a>
                         </span> 
                     <% } %>
                     <span data-page="<%= page.pageCount %>" class="lastPage pagination-list">
                         <a href="/?pageIndex=<%= page.pageCount %>&pageSize=<%= page.pageSize %>" data-spm-disabled="true">尾页</a>
                     </span>
-
-                    <!-- 总共数据:[<%= page.total %>];
+        
+                    总共数据:[<%= page.total %>];
                     总页数:[<%= page.pageCount %>];
                     当前第[<%= page.pageIndex %>]页;
-                    每页[<%= page.pageSize %>]条; -->
+                    每页[<%= page.pageSize %>]条;
                 <% } %>
                 <input class="pageCount" type="text" value="<%= page.pageCount %>" style="display: none">
                 <input class="pageIndex" type="text" value="<%= page.pageIndex %>" style="display: none">
-
-            </div>
-
-        </div>
-
-        <div class="blog-advertisement w200 fl ml20">
-            <div class="blog-advertisement-in">
-                这里是普通占位~可放广告或者其他热搜文章
-                <div id="pjax-container">pjax-container</div> 
-            </div>
-
-        </div>
+        </div> -->
+        <%- include('./footer')%>
     </div>
 
-    <%- include('./footer')%>
+    
 </body>
 <script id="template-tmpl" type="text/template">
         <ul class="blog-article-list">
