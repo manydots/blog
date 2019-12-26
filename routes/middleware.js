@@ -1,7 +1,6 @@
 const { getKeys, getClientIp, formatDate } = require('../utils/index');
 const { sign, verify} = require('../utils/jwt');
 const { sysUser,query } = require('../utils/sql');
-//const { query } = require('../utils/db');
 
 function middleware(router) {
 	return router.use((req, res, next) => {
@@ -13,7 +12,7 @@ function middleware(router) {
 		};
 		//console.log(req.keywords)
 		//路由不为/login且token不为空
-		if (!req.session.token && (req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
+		if (!req.session.token && (req.url.startsWith('/al') || req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
 			let redirect = req.url.indexOf('?') > -1 ? `/login?redirect=${encodeURIComponent(req.url)}` : '/login';
 			res.redirect(redirect);
 			return;
@@ -56,7 +55,6 @@ function middleware(router) {
 						//success
 						if (msg == 'success') {
 							console.log(`[sendQueueMsg]:success.`);
-
 							if (res.ioServer) {
 								//向web前端推送消息
 								res.ioServer.sockets.emit('Queues', {
@@ -65,16 +63,14 @@ function middleware(router) {
 									dataType: 'sendQueue'
 								});
 							}
-
-							query(sysUser.intoLimitLog, function(err, rows, fields) {
-								if (err) {
-									//console.log(err)
-								} else {
-									//console.log('intoLimitLog success')
-								};
-							}, params);
+							//console.log(rows.insertId)
+							query({
+								sql:sysUser.intoLimitLog,
+								params:params,
+								res:res
+							});
 						}
-					})
+					});
 				}
 			};
 			//console.log(req.indexPage)

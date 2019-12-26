@@ -1,4 +1,5 @@
 const schedule = require('node-schedule');
+const { formatDate } = require('../utils/index');
 
 // *    *    *    *    *    *
 // ┬    ┬    ┬    ┬    ┬    ┬
@@ -22,8 +23,8 @@ function scheduleCron(rabbitMQ, callback) {
 	//second
 
 	//每分钟的第30秒定时执行一次:
-	const j = schedule.scheduleJob('30 1 * * * *', function() {
-		console.log(`定时器已触发:${new Date()}`);
+	const j = schedule.scheduleJob('30 * * * * *', function() {
+		console.log(`[${formatDate()}]:每分钟第30秒定时器已触发`);
 		rabbitMQ.receiveQueueMsg('testQueue', (msg) => {
 			console.log(`[receiveQueueMsg]:success.`);
 		})

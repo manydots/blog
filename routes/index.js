@@ -9,54 +9,44 @@ const { sendMails } = require('../utils/sendMail');
 var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
 var checkMail = curryingCheck('^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$');
 
-router.get('/', function(request, response) {
+router.get('/', async (request, response) => {
 	let pageIndex = request.indexPage.pageIndex;
 	let pageSize = request.indexPage.pageSize || 10;
-	//console.log(request.checkUser)
-	//console.log(request.keywords)
-	//console.log(request.session.token)
 
-	query(sysUser.getArticleCount, function(err, rows, fields) {
-		if (err) {
-			response.json({
-				code: -101,
-				msg: '数据库get-getArticleCount错误！'
-			});
-		} else {
-			let totals = rows[0].total;
-			let params = [{
-				values: (pageIndex - 1) * pageSize
-			}, {
-				values: pageSize,
-			}];
-			query(sysUser.getArticleAll, function(err, rows, fields) {
-				if (err) {
-					response.json({
-						code: -101,
-						msg: '数据库get-getArticleAll错误！'
-					});
-				} else {
-					response.render('index', {
-						title: 'Blogers, Where Are You.',
-						result: rows,
-						fmt: formatDate,
-						diff: dateDiff,
-						token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
-							userName: request.session.userName,
-							userId: request.session.userId
-						} : null,
-						page: {
-							total: totals,
-							pageIndex: pageIndex,
-							pageSize: pageSize,
-							pageCount: Math.ceil(totals / pageSize)
-						}
-					})
-				};
-			}, params);
-		};
+	//同步请求
+	let totals = await query({
+		sql: sysUser.getArticleCount,
+		res: response
 	});
+	let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
+	let params = [{
+		values: (pageIndex - 1) * pageSize
+	}, {
+		values: pageSize,
+	}];
 
+	query({
+		sql: sysUser.getArticleAll,
+		params: params,
+		res: response
+	}).then(function(rows) {
+		response.render('index', {
+			title: 'Blogers, Where Are You.',
+			result: rows,
+			fmt: formatDate,
+			diff: dateDiff,
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null,
+			page: {
+				total: rowCounts,
+				pageIndex: pageIndex,
+				pageSize: pageSize,
+				pageCount: Math.ceil(rowCounts / pageSize)
+			}
+		})
+	})
 });
 
 router.get('/login', function(request, response) {
@@ -71,7 +61,7 @@ router.get('/login', function(request, response) {
 });
 
 router.get('/register', function(request, response) {
-	//console.log('login---->', request.session.token)
+	//console.log('register---->', request.session.token)
 	response.render('register', {
 		title: '注册账号',
 		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
@@ -101,37 +91,87 @@ router.get('/edit', function(request, response) {
 	})
 });
 
-router.get('/a/:articleId', function(request, response) {
-	//console.log(request.query)
+router.get('/a/:articleId', async (request, response) => {
 	//let keys = Object.keys(request.params);
-	//console.log(keys)
-
-	query(sysUser.getArticleById, function(err, rows, fields) {
-		if (err) {
-			//console.log(err)
+	let hots = await query({
+		sql:sysUser.getArticleAll,
+		params:[{values:0},{values:3}]
+	});
+	query({
+		sql: sysUser.getArticleById,
+		params: request.params.articleId,
+		res: response
+	}).then(function(rows) {
+		//console.log(hots.length)
+		if (rows.length <= 0) {
+			response.render('error', {
+				title: '文章不存在',
+				result: '文章不存在',
+				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+					userName: request.session.userName,
+					userId: request.session.userId
+				} : null,
+			})
 		} else {
-			if (rows.length <= 0) {
-				response.render('error', {
-					title: '文章不存在',
-					result: '文章不存在',
-					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
-						userName: request.session.userName,
-						userId: request.session.userId
-					} : null,
-				})
-			} else {
-				response.render('article', {
-					title: rows[0].title,
-					result: rows[0],
+			response.render('article', {
+				title: rows[0].title,
+				result: rows[0],
+				hotsList:hots,
+				fmt: formatDate,
+				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+					userName: request.session.userName,
+					userId: request.session.userId
+				} : null,
+			})
+		}
+	})
+});
+
+router.get('/al/:userId', async (request, response) => {
+	if (!request.session.token) {
+		response.redirect('/login');
+		return;
+	} else {
+		if (request.params.userId == request.session.userId) {
+			let pageIndex = parseInt(request.query.p) || 1;
+			let pageSize = parseInt(request.query.s) || 5;
+			//同步请求
+			let totals = await query({
+				sql: sysUser.getArticleUserCount,
+				params:request.session.userId,
+				res: response
+			});
+			let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
+			console.log('文章总数:',rowCounts)
+			query({
+				sql: sysUser.getArticleByUserId,
+				params: [{
+					values: request.session.userId
+				}, {
+					values: pageIndex
+				}, {
+					values: pageSize
+				}],
+				res: response
+			}).then(function(rows) {
+				response.render('al', {
+					title: '文章列表',
+					result: rows,
 					fmt: formatDate,
 					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 						userName: request.session.userName,
 						userId: request.session.userId
 					} : null,
-				})
-			}
-		};
-	}, request.params.articleId);
+				});
+			})
+
+		} else {
+			console.log('用户不匹配');
+			response.redirect('/login');
+			return;
+		}
+	}
+
 });
 
 router.get('/token/:tokens', function(request, response) {
@@ -143,7 +183,7 @@ router.get('/token/:tokens', function(request, response) {
 					title: '邮箱激活-邮件已过期',
 					code: -504,
 					msg: '邮件已过期',
-					token:null
+					token: null
 				})
 			} else {
 				let params = [{
@@ -153,33 +193,26 @@ router.get('/token/:tokens', function(request, response) {
 					values: decode.userId,
 					column: 'id'
 				}];
-				query(sysUser.updateUser, function(err, rows, fields) {
-					if (err) {
-						//console.log(err)
-						response.render('token', {
-							title: '数据库错误',
-							code: -101,
-							msg: '数据库updateUser错误！',
-							token: decode
-						});
-					} else {
-						response.render('token', {
-							title: '邮箱已激活-邮箱激活成功',
-							code: 200,
-							msg: '邮箱激活成功！',
-							token: decode
-						});
-					};
-				}, params);
-				
+				query({
+					sql: sysUser.updateUser,
+					params: params,
+					res: response
+				}).then(function(rows) {
+					response.render('token', {
+						title: '邮箱已激活-邮箱激活成功',
+						code: 200,
+						msg: '邮箱激活成功！',
+						token: decode
+					});
+				})
 			}
 		})
 	} else {
 		response.render('token', {
 			code: -501,
 			title: '邮箱激活-参数异常',
-			msg:'参数异常',
-			token:null
+			msg: '参数异常',
+			token: null
 		})
 	}
 });
@@ -199,93 +232,83 @@ router.post('/login', function(request, response) {
 			msg: '账号或密码为空！'
 		});
 		return;
-	}
-	query(sysUser.checkUser, function(err, rows, fields) {
-		if (err) {
+	};
+	query({
+		sql: sysUser.checkUser,
+		params: params,
+		res: response
+	}).then(function(rows) {
+		if (rows.length <= 0) {
 			response.json({
-				code: -101,
-				msg: '数据库checkUser错误！'
-			})
-			//console.log(err)
+				code: -302,
+				msg: '账号不存在或密码错误！'
+			});
 		} else {
-			if (rows.length <= 0) {
+			if (rows[0].state == '1') {
 				response.json({
-					code: -302,
-					msg: '账号不存在或密码错误！'
+					code: -303,
+					msg: '账号已被封停，请联系客服'
 				});
-			} else {
-				if (rows[0].state == '1') {
-					response.json({
-						code: -303,
-						msg: '账号已被封停，请联系客服'
-					});
-					return;
-				}
-				if(rows[0].token == null || rows[0].token == ''){
-					let _tokenMail = sign({
-						token: {
-							userId: rows[0].id,
-							mail:rows[0].mail,
-							userName: rows[0].user_name,
-						},
-						option: {
-							expiresIn: 60 * 15 // 15分钟过期
-						}
-					});
-					//console.log(_tokenMail);
-					//https://blog.jeeas.cn
-					let visitUrl = request.headers.origin.indexOf('127.0.0.1') > -1 ? 'http://127.0.0.1:3035':'https://blog.jeeas.cn';
-					let sendHtml = `<a class="nav-link" href="${visitUrl}/token/${_tokenMail}" target="_blank">点击激活，15分钟有效</a>`;
-					sendMails(rows[0].mail, sendHtml, function(res) {
-						if (res && res.response.indexOf('250 Ok') > -1) {
-							console.log('激活邮件发送成功')
-						} else {
-							console.log('激活邮件发送失败')
-						}
-					});
-					response.json({
-						code: -304,
-						msg: `邮箱未激活！请激活后重试！邮件已发送到${rows[0].mail}，15分钟内有效`,
-						token:{
-							mail:rows[0].mail
-						}
-					});
-
-					return;
-				}
-				request.session.userName = rows[0].user_name;
-				request.session.userId = rows[0].id;
-				let tokens = sign({
+				return;
+			}
+			if (rows[0].token == null || rows[0].token == '') {
+				let _tokenMail = sign({
 					token: {
-						lastLoginTime: +new Date(),
-						isLogin: true,
 						userId: rows[0].id,
-						userName: rows[0].user_name
+						mail: rows[0].mail,
+						userName: rows[0].user_name,
 					},
 					option: {
-						expiresIn: 60 * cookieMaxAge // 15分钟过期
+						expiresIn: 60 * 15 // 15分钟过期
 					}
 				});
-				request.session.token = tokens;
-				response.cookie('_token', tokens, {
-					httpOnly: true,
-					maxAge: 60 * 1000 * 15, //有效期设置15分钟
+				//console.log(_tokenMail);
+				//https://blog.jeeas.cn
+				let visitUrl = request.headers.origin.indexOf('127.0.0.1') > -1 ? 'http://127.0.0.1:3035' : 'https://blog.jeeas.cn';
+				let sendHtml = `<a class="nav-link" href="${visitUrl}/token/${_tokenMail}" target="_blank">点击激活，15分钟有效</a>`;
+				sendMails(rows[0].mail, sendHtml, function(res) {
+					if (res && res.response.indexOf('250 Ok') > -1) {
+						console.log('激活邮件发送成功')
+					} else {
+						console.log('激活邮件发送失败')
+					}
 				});
-				//重定向redirect
-				//let redirect = !request.body.redirect || request.body.redirect == '' ? '/' : decodeURIComponent(request.body.redirect);
-				//response.redirect(redirect);
-
 				response.json({
-					code: 200,
-					msg: '操作成功'
+					code: -304,
+					msg: `邮箱未激活！请激活后重试！邮件已发送到${rows[0].mail}，15分钟内有效`,
+					token: {
+						mail: rows[0].mail
+					}
 				});
+				return;
 			}
-		};
-	}, params);
-});
-
-router.post('/', function(request, response) {
-
+			request.session.userName = rows[0].user_name;
+			request.session.userId = rows[0].id;
+			let tokens = sign({
+				token: {
+					lastLoginTime: +new Date(),
+					isLogin: true,
+					userId: rows[0].id,
+					userName: rows[0].user_name
+				},
+				option: {
+					expiresIn: 60 * cookieMaxAge // 15分钟过期
+				}
+			});
+			request.session.token = tokens;
+			response.cookie('_token', tokens, {
+				httpOnly: true,
+				maxAge: 60 * 1000 * 15, //有效期设置15分钟
+			});
+			//重定向redirect
+			//let redirect = !request.body.redirect || request.body.redirect == '' ? '/' : decodeURIComponent(request.body.redirect);
+			//response.redirect(redirect);
+			response.json({
+				code: 200,
+				msg: '操作成功'
+			});
+		}
+	})
 });
 
 router.post('/loginout', function(request, response) {
@@ -303,7 +326,7 @@ router.post('/loginout', function(request, response) {
 router.post('/publish', function(request, response) {
 	if (!request.session.token) {
 		response.json({
-			code: -305,
+			code: -306,
 			msg: '未登录'
 		});
 		return;
@@ -333,28 +356,23 @@ router.post('/publish', function(request, response) {
 		values: formatDate(),
 		column: 'modify_time'
 	}];
-	query(sysUser.edit, function(err, rows, fields) {
-		if (err) {
-			//console.log(err)
-			response.json({
-				code: -304,
-				msg: '文章发布失败！'
-			});
-		} else {
-			response.json({
-				code: 200,
-				msg: '文章发布成功！'
-			});
-		};
-	}, params)
-
+	query({
+		sql: sysUser.edit,
+		params: params,
+		res: response
+	}).then(function(rows) {
+		response.json({
+			code: 200,
+			msg: '文章发布成功！'
+		});
+	});
 })
 
 router.post('/register', function(request, response) {
 	//console.log(request.body)
 	if (!request.body.user_name || request.body.user_name == '' || !checkUserName(request.body.user_name) || request.body.user_name.length < 3) {
 		response.json({
-			code: -304,
+			code: -302,
 			msg: '用户名错误或含有特殊字符或用户名位数不足3位以上',
 			type: 'user_register_username_error'
 		})
@@ -363,7 +381,7 @@ router.post('/register', function(request, response) {
 
 	if (!request.body.pass_word || request.body.pass_word == '' || request.body.pass_word.length < 4) {
 		response.json({
-			code: -304,
+			code: -303,
 			msg: '密码位数不足，4位以上',
 			type: 'user_register_password_error'
 		})
@@ -389,7 +407,7 @@ router.post('/register', function(request, response) {
 
 	if (!request.body.mail || request.body.mail == '' || !checkMail(request.body.mail)) {
 		response.json({
-			code: -304,
+			code: -305,
 			msg: '邮箱格式错误',
 			type: 'user_register_mail_error'
 		})
@@ -397,56 +415,44 @@ router.post('/register', function(request, response) {
 	}
 
 	if (request.body.user_name && request.body.user_name != '') {
-		query(sysUser.getUserByUserName, function(err, rows, fields) {
-			if (err) {
-				//console.log(err)
-				response.json({
-					code: -101,
-					msg: '数据库getUserByUserName错误'
-				})
-				return;
-			} else {
-				//console.log(rows)
-				if (rows.length <= 0) {
-					let params = [{
-						values: request.body.user_name,
-						column: 'user_name'
-					}, {
-						values: request.body.pass_word,
-						column: 'pass_word',
-						encryption: true
-					}, {
-						values: request.body.mail,
-						column: 'mail'
-					}, {
-						values: formatDate(),
-						column: 'creat_time'
-					}];
-					query(sysUser.into, function(err, rows, fields) {
-						if (err) {
-							response.json({
-								code: -101,
-								msg: '数据库into错误'
-							})
-							//console.log(err)
-						} else {
-							response.json({
-								code: 200,
-								msg: `账号注册成功！激活邮件在登录时发送到${request.body.mail}`
-							})
-						};
-					}, params);
-				} else {
+		query({
+			sql: sysUser.getUserByUserName,
+			params: request.body.user_name,
+			res: response
+		}).then(function(rows) {
+			if (rows.length <= 0) {
+				let params = [{
+					values: request.body.user_name,
+					column: 'user_name'
+				}, {
+					values: request.body.pass_word,
+					column: 'pass_word',
+					encryption: true
+				}, {
+					values: request.body.mail,
+					column: 'mail'
+				}, {
+					values: formatDate(),
+					column: 'creat_time'
+				}];
+				query({
+					sql: sysUser.into,
+					params: params,
+					res: response
+				}).then(function(rows) {
 					response.json({
-						code: -301,
-						msg: '用户已存在'
+						code: 200,
+						msg: `账号注册成功！激活邮件在登录时发送到${request.body.mail}`
 					})
-				}
-
-			};
-		}, request.body.user_name);
+				})
+			} else {
+				response.json({
+					code: -301,
+					msg: '用户已存在'
+				})
+			}
+		})
 	}
-
 });
 
 router.post('/sendMail', function(request, response) {
@@ -487,7 +493,7 @@ router.post('/sendMail', function(request, response) {
 router.post('/follow', function(request, response) {
 	if (!request.session.token) {
 		response.json({
-			code: -305,
+			code: -306,
 			msg: '未登录'
 		});
 		return;
@@ -496,121 +502,95 @@ router.post('/follow', function(request, response) {
 		let userId = parseInt(request.body.userId)
 		let liker = parseInt(request.session.userId);
 		//console.log(followed, userId, liker)
-		query(sysUser.getArticleById, function(err, rows, fields) {
-			if (err) {
-				//console.log(err)
+		query({
+			sql: sysUser.getArticleById,
+			params: followed,
+			res: response
+		}).then(function(rows) {
+			if (rows.length <= 0) {
 				response.json({
-					code: -101,
-					msg: '数据库getArticleById错误'
-				})
-
+					code: -405,
+					msg: '文章不存在'
+				});
+				return;
 			} else {
-				if (rows.length <= 0) {
-					response.json({
-						code: -405,
-						msg: '文章不存在'
-					});
-					return;
-				} else {
-					//console.log(rows[0])
-					query(sysUser.getFollowLog, function(err1, rows1, fields) {
-						if (err1) {
-							//console.log(err1)
+				//console.log(rows[0])
+				query({
+					sql: sysUser.getFollowLog,
+					params: followed,
+					res: response
+				}).then(function(rows1) {
+					if (rows1.length <= 0) {
+						//新增点赞记录
+						let params = [{
+							values: followed,
+							column: 'article_id'
+						}, {
+							values: userId,
+							column: 'user_id',
+						}, {
+							values: 'like',
+							column: 'type'
+						}, {
+							values: liker + ',',
+							column: 'follower'
+						}, {
+							values: formatDate(),
+							column: 'creat_time'
+						}];
+						query({
+							sql: sysUser.intoFollowLog,
+							params: params,
+							res: response
+						}).then(function(res) {
 							response.json({
-								code: -101,
-								msg: '数据库getFollowLog错误'
+								code: 200,
+								msg: '点赞成功'
+							});
+						})
+					} else {
+						//更新点赞记录
+						let oldfollower = rows1[0].follower;
+						if (oldfollower.indexOf(liker) <= -1) {
+							oldfollower = oldfollower + liker + ',';
+							let params = [{
+								values: oldfollower,
+								column: 'follower'
+							}, {
+								values: formatDate(),
+								column: 'creat_time'
+							}, {
+								values: followed,
+								column: 'article_id'
+							}];
+
+							query({
+								sql: sysUser.updateFollowLog,
+								params: params,
+								res: response
+							}).then(function(res) {
+								response.json({
+									code: 200,
+									msg: '更新点赞成功'
+								});
 							})
-
 						} else {
-							//console.log(rows1)
-							if (rows1.length <= 0) {
-								//新增点赞记录
-								let params = [{
-									values: followed,
-									column: 'article_id'
-								}, {
-									values: userId,
-									column: 'user_id',
-								}, {
-									values: 'like',
-									column: 'type'
-								}, {
-									values: liker + ',',
-									column: 'follower'
-								}, {
-									values: formatDate(),
-									column: 'creat_time'
-								}];
-								query(sysUser.intoFollowLog, function(err2, rows2, fields) {
-									if (err2) {
-										//console.log(err2);
-										response.json({
-											code: -101,
-											msg: '数据库intoFollowLog错误'
-										})
-									} else {
-										response.json({
-											code: 200,
-											msg: '点赞成功'
-										});
-									}
-
-								}, params);
-							} else {
-								//更新点赞记录
-								let oldfollower = rows1[0].follower;
-								if (oldfollower.indexOf(liker) <= -1) {
-
-									oldfollower = oldfollower + liker + ',';
-
-									let params = [{
-										values: oldfollower,
-										column: 'follower'
-									}, {
-										values: formatDate(),
-										column: 'creat_time'
-									}, {
-										values: followed,
-										column: 'article_id'
-									}];
-
-									query(sysUser.updateFollowLog, function(e, r, f) {
-										if (e) {
-											response.json({
-												code: -101,
-												msg: '数据库updateFollowLog错误'
-											})
-										} else {
-											response.json({
-												code: 200,
-												msg: '更新点赞成功'
-											});
-										}
-
-									}, params);
-								} else {
-									response.json({
-										code: 200,
-										msg: '更新点赞重复成功'
-									});
-								}
-
-
-							}
-						};
-					}, followed);
-				}
-			};
-		}, followed);
+							response.json({
+								code: 200,
+								msg: '更新点赞重复成功'
+							});
+						}
+					}
+				})
+			}
+		})
 	}
-
 })
-
 
 router.post('/unfollow', function(request, response) {
 	if (!request.session.token) {
 		response.json({
-			code: -305,
+			code: -306,
 			msg: '未登录'
 		});
 		return;
@@ -618,96 +598,66 @@ router.post('/unfollow', function(request, response) {
 		let unfollowed = parseInt(request.body.unfollowed);
 		let unliker = parseInt(request.session.userId);
 		//console.log(unfollowed, userId, liker)
-		query(sysUser.getArticleById, function(err, rows, fields) {
-			if (err) {
-				//console.log(err)
+		query({
+			sql: sysUser.getArticleById,
+			params: unfollowed,
+			res: response
+		}).then(function(rows) {
+			if (rows.length <= 0) {
 				response.json({
-					code: -101,
-					msg: '数据库unfollow-getArticleById错误'
-				})
+					code: -405,
+					msg: '文章不存在'
+				});
+				return;
 			} else {
-				if (rows.length <= 0) {
-					response.json({
-						code: -405,
-						msg: '文章不存在'
-					});
-					return;
-				} else {
-					query(sysUser.getFollowLog, function(err1, rows1, fields) {
-						if (err1) {
-							//console.log(err1)
+				query({
+					sql: sysUser.getFollowLog,
+					params: unfollowed,
+					res: response
+				}).then(function(rows1) {
+					if (rows1.length <= 0) {
+						response.json({
+							code: -406,
+							msg: '未关注，不需要取消关注'
+						});
+					} else {
+						let old_follower = rows1[0].follower;
+						if (old_follower.indexOf(unliker) <= -1) {
 							response.json({
-								code: -101,
-								msg: '数据库unfollow-getFollowLog错误'
-							})
+								code: -406,
+								msg: '未关注，不需要取消关注'
+							});
 						} else {
-							if (rows1.length <= 0) {
+							old_follower = old_follower.replace(`${unliker},`, '');
+							let params = [{
+								values: old_follower,
+								column: 'follower'
+							}, {
+								values: formatDate(),
+								column: 'creat_time'
+							}, {
+								values: unfollowed,
+								column: 'article_id'
+							}];
+							query({
+								sql: sysUser.updateFollowLog,
+								params: params,
+								res: response
+							}).then(function(res) {
 								response.json({
-									code: -406,
-									msg: '未关注，不需要取消关注'
+									code: 200,
+									msg: '点赞取消成功'
 								});
-							} else {
-								let old_follower = rows1[0].follower;
-								if (old_follower.indexOf(unliker) <= -1) {
-									response.json({
-										code: -406,
-										msg: '未关注，不需要取消关注'
-									});
-								} else {
-									old_follower = old_follower.replace(`${unliker},`, '');
-									let params = [{
-										values: old_follower,
-										column: 'follower'
-									}, {
-										values: formatDate(),
-										column: 'creat_time'
-									}, {
-										values: unfollowed,
-										column: 'article_id'
-									}];
-
-									query(sysUser.updateFollowLog, function(e, r, f) {
-										if (e) {
-											//console.log(e);
-											response.json({
-												code: -101,
-												msg: '数据库unfollow-updateFollowLog错误'
-											})
-
-										} else {
-											response.json({
-												code: 200,
-												msg: '点赞取消成功'
-											});
-										}
-
-									}, params);
-								}
-
-							}
-						};
-					}, unfollowed);
-				}
-			};
-		}, unfollowed);
+							})
+						}
+					}
+				})
+			}
+		})
 	}
-
 });
 
-
 router.post('/hots', function(request, response) {
-
-
-	query(sysUser.edit, function(err, rows, fields) {
-		if (err) {
-			//console.log(err)
-		} else {
-			response.json({
-				code: 200,
-				msg: '发布成功！'
-			});
-		};
-	})
 
 })
 

@@ -215,7 +215,7 @@
                 //$.pjax.reload('html');
                 window.location.reload();
                 //$(_this).siblings('b').html(num+1);
-            }else if(res.code == -305){
+            }else if(res.code == -306){
                 window.location.href = '/login';
             }
         });
@@ -235,7 +235,9 @@
             if(res && res.code == 200){
                 //$.pjax.reload('html');
                 window.location.reload();
-                //$(_this).siblings('b').html(num-1);
+                //$(_this).siblings('b').html(num+1);
+            }else if(res.code == -306){
+                window.location.href = '/login';
             }
         });
     }
