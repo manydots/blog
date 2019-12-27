@@ -47,7 +47,7 @@
                             <b><% if(item.follower) { %><%= item.follower.split(',').length -1 %><% } else { %>0<% } %></b>人已赞
                             <% if(token) { %>
                                 <% if(item.follower) { %>
-                                    <% if(item.follower.indexOf(token.userId) > -1) { %>
+                                    <% if(item.follower.includes(token.userId)) { %>
                                         <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gounfollow(<%=item.id%>,<%=item.user_id%>,this)">取消点赞</span>
                                     <% } else { %>
                                         <span class="article-follow-go cursor" data-id="<%= item.id %>" onclick="gofollow(<%=item.id%>,<%=item.user_id%>,this)">点赞</span>
@@ -145,7 +145,7 @@
             </li>
             {{~}}
         </ul>
-      </script>
+</script>
 <script type="text/javascript">
     
     $(function(){
@@ -195,7 +195,8 @@
         };
     });
     function goNext(pageIndex,pageSize){
-        window.location.href = origin+`?pageIndex=${pageIndex}&pageSize=${pageSize}`;
+        //console.log(window.location)
+        window.location.href = `${window.location.pathname}?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     }
 
     function gofollow(id,userId, _this){

@@ -1,7 +1,7 @@
 var mysqlBase = {
 	"host": "47.98.58.14",
 	"user": "root",
-	"password": "123456",
+	"password": "",
 	"database": "",
 };
 

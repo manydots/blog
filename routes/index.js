@@ -16,10 +16,13 @@ router.get('/', async (request, response) => {
 	//同步请求
 	let totals = await query({
 		sql: sysUser.getArticleCount,
+		params:'0',
 		res: response
 	});
 	let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
 	let params = [{
+		values: '0',
+	}, {
 		values: (pageIndex - 1) * pageSize
 	}, {
 		values: pageSize,
@@ -82,24 +85,78 @@ router.get('/send', function(request, response) {
 });
 
 router.get('/edit', function(request, response) {
-	response.render('edit', {
-		title: '发布文章',
-		token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
-			userName: request.session.userName,
-			userId: request.session.userId
-		} : null,
-	})
+	//中间件已拦截登录状态，故不需要判断登录状态
+	console.log(request.query.id,request.query.state) 
+	if (request.query.id && request.query.id != '' && request.query.state && request.query.state !='') {
+		query({
+			sql: sysUser.getArticleOwner,
+			params: [{
+				values: request.query.id
+			}, {
+				values: request.session.userId
+			}],
+			res: response
+		}).then(function(rows) {
+			if (rows.length == 0) {
+				response.json({
+					code: -407,
+					msg: '文章权限异常'
+				});
+				return;
+			} else {
+				query({
+					sql: sysUser.getArticleById,
+					params: [{
+						values: request.query.id
+					}, {
+						values: request.query.state
+					}],
+					res: response
+				}).then(function(rows) {
+					response.render('edit', {
+						title: '修改文章',
+						result: rows[0],
+						token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+							userName: request.session.userName,
+							userId: request.session.userId
+						} : null,
+					})
+				})
+			}
+		})
+	} else {
+		response.render('edit', {
+			title: '发布文章',
+			result:null,
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null,
+		})
+	}
+
+
 });
 
 router.get('/a/:articleId', async (request, response) => {
 	//let keys = Object.keys(request.params);
 	let hots = await query({
-		sql:sysUser.getArticleAll,
-		params:[{values:0},{values:3}]
+		sql: sysUser.getArticleAll,
+		params: [{
+			values: '0',
+		}, {
+			values: 0
+		}, {
+			values: 3
+		}]
 	});
 	query({
 		sql: sysUser.getArticleById,
-		params: request.params.articleId,
+		params: [{
+			values:request.params.articleId
+		},{
+			values:'0'
+		}],
 		res: response
 	}).then(function(rows) {
 		//console.log(hots.length)
@@ -138,26 +195,97 @@ router.get('/al/:userId', async (request, response) => {
 			//同步请求
 			let totals = await query({
 				sql: sysUser.getArticleUserCount,
-				params:request.session.userId,
+				params: [{
+					values: request.session.userId
+				}, {
+					values: '0'
+				}],
 				res: response
 			});
 			let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
-			console.log('文章总数:',rowCounts)
+			console.log(`用户编号:[${request.session.userId}],个人文章总数:[${rowCounts}]`);
 			query({
 				sql: sysUser.getArticleByUserId,
 				params: [{
 					values: request.session.userId
 				}, {
-					values: pageIndex
+					values: '0'
+				}, {
+					values: (pageIndex - 1) * pageSize
 				}, {
 					values: pageSize
 				}],
 				res: response
 			}).then(function(rows) {
 				response.render('al', {
-					title: '文章列表',
+					title: '已发布-文章列表',
 					result: rows,
 					fmt: formatDate,
+					page: {
+						total: rowCounts,
+						pageIndex: pageIndex,
+						pageSize: pageSize,
+						pageCount: Math.ceil(rowCounts / pageSize)
+					},
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null,
+				});
+			})
+
+		} else {
+			console.log('用户不匹配');
+			response.redirect('/login');
+			return;
+		}
+	}
+
+});
+
+router.get('/ad/:userId', async (request, response) => {
+	if (!request.session.token) {
+		response.redirect('/login');
+		return;
+	} else {
+		if (request.params.userId == request.session.userId) {
+			let pageIndex = parseInt(request.query.p) || 1;
+			let pageSize = parseInt(request.query.s) || 5;
+			//同步请求
+			let totals = await query({
+				sql: sysUser.getArticleUserCount,
+				params: [{
+					values: request.session.userId
+				}, {
+					values: '1'
+				}],
+				res: response
+			});
+			let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
+			console.log(`用户编号:[${request.session.userId}],个人回收站文章总数:[${rowCounts}]`);
+			query({
+				sql: sysUser.getArticleByUserId,
+				params: [{
+					values: request.session.userId
+				}, {
+					values: '1'
+				}, {
+					values: (pageIndex - 1) * pageSize
+				}, {
+					values: pageSize
+				}],
+				res: response
+			}).then(function(rows) {
+				response.render('ad', {
+					title: '回收站-文章列表',
+					result: rows,
+					fmt: formatDate,
+					page: {
+						total: rowCounts,
+						pageIndex: pageIndex,
+						pageSize: pageSize,
+						pageCount: Math.ceil(rowCounts / pageSize)
+					},
 					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 						userName: request.session.userName,
 						userId: request.session.userId
@@ -267,7 +395,7 @@ router.post('/login', function(request, response) {
 				let visitUrl = request.headers.origin.indexOf('127.0.0.1') > -1 ? 'http://127.0.0.1:3035' : 'https://blog.jeeas.cn';
 				let sendHtml = `<a class="nav-link" href="${visitUrl}/token/${_tokenMail}" target="_blank">点击激活，15分钟有效</a>`;
 				sendMails(rows[0].mail, sendHtml, function(res) {
-					if (res && res.response.indexOf('250 Ok') > -1) {
+					if (res && res.response.includes('250 Ok')) {
 						console.log('激活邮件发送成功')
 					} else {
 						console.log('激活邮件发送失败')
@@ -368,6 +496,49 @@ router.post('/publish', function(request, response) {
 	});
 })
 
+router.post('/edits', function(request, response) {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		query({
+			sql: sysUser.getArticleOwner,
+			params: [{
+				values: request.body.id
+			}, {
+				values: request.session.userId
+			}],
+			res: response
+		}).then(function(rows) {
+			if (rows.length == 0) {
+				response.json({
+					code: -407,
+					msg: '文章权限异常'
+				});
+				return;
+			} else {
+				query({
+					sql: sysUser.deleteArticleById,
+					params: [{
+						values: request.body.id
+					}, {
+						values: request.session.userId
+					}],
+					res: response
+				}).then(function(res) {
+					response.json({
+						code: 200,
+						msg: '文章永久删除成功！'
+					});
+				})
+			}
+		});
+	}
+})
+
 router.post('/register', function(request, response) {
 	//console.log(request.body)
 	if (!request.body.user_name || request.body.user_name == '' || !checkUserName(request.body.user_name) || request.body.user_name.length < 3) {
@@ -390,7 +561,7 @@ router.post('/register', function(request, response) {
 	let isContainKeyWord = false;
 	if (request.body.user_name) {
 		for (let v of request.keywords) {
-			if (request.body.user_name.indexOf(v) > -1) {
+			if (request.body.user_name.includes(v)) {
 				isContainKeyWord = true;
 				break;
 			}
@@ -472,7 +643,7 @@ router.post('/sendMail', function(request, response) {
 			});
 		} else {
 			sendMails(to, sendHtml, function(res) {
-				if (res && res.response.indexOf('250 Ok') > -1) {
+				if (res && res.response.includes('250 Ok')) {
 					response.json({
 						code: 200,
 						msg: '邮件发送成功'
@@ -551,7 +722,7 @@ router.post('/follow', function(request, response) {
 					} else {
 						//更新点赞记录
 						let oldfollower = rows1[0].follower;
-						if (oldfollower.indexOf(liker) <= -1) {
+						if (!oldfollower.includes(liker)) {
 							oldfollower = oldfollower + liker + ',';
 							let params = [{
 								values: oldfollower,
@@ -622,7 +793,7 @@ router.post('/unfollow', function(request, response) {
 						});
 					} else {
 						let old_follower = rows1[0].follower;
-						if (old_follower.indexOf(unliker) <= -1) {
+						if (!old_follower.includes(unliker)) {
 							response.json({
 								code: -406,
 								msg: '未关注，不需要取消关注'
@@ -657,8 +828,95 @@ router.post('/unfollow', function(request, response) {
 	}
 });
 
-router.post('/hots', function(request, response) {
+router.post('/deleteArticle', async (request, response) => {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		//console.log(request.body.id);
+		query({
+			sql: sysUser.getArticleOwner,
+			params: [{
+				values: request.body.id
+			}, {
+				values: request.session.userId
+			}],
+			res: response
+		}).then(function(rows) {
+			if (rows.length == 0) {
+				response.json({
+					code: -407,
+					msg: '文章权限异常'
+				});
+				return;
+			} else {
+				let state = request.body.state || '1';
+				query({
+					sql: sysUser.deleteArticleByIdState,
+					params: [{
+						values: state
+					}, {
+						values: request.body.id
+					}, {
+						values: request.session.userId
+					}],
+					res: response
+				}).then(function(res) {
+					response.json({
+						code: 200,
+						msg: '文章状态更新成功！'
+					});
+				})
+			}
+		});
+	}
+});
 
-})
+router.post('/deleteForever', async (request, response) => {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		//console.log(request.body.id);
+		query({
+			sql: sysUser.getArticleOwner,
+			params: [{
+				values: request.body.id
+			}, {
+				values: request.session.userId
+			}],
+			res: response
+		}).then(function(rows) {
+			if (rows.length == 0) {
+				response.json({
+					code: -407,
+					msg: '文章权限异常'
+				});
+				return;
+			} else {
+				query({
+					sql: sysUser.deleteArticleById,
+					params: [{
+						values: request.body.id
+					}, {
+						values: request.session.userId
+					}],
+					res: response
+				}).then(function(res) {
+					response.json({
+						code: 200,
+						msg: '文章永久删除成功！'
+					});
+				})
+			}
+		});
+	}
+});
 
 module.exports = router;

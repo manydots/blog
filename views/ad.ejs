@@ -17,7 +17,7 @@
         <nav class="mt-2" aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item active" aria-current="page"><a href="javascript:;">文章管理</a></li>
-            <li class="breadcrumb-item" >已发布</li>
+            <li class="breadcrumb-item" >回收站</li>
           </ol>
         </nav>
 
@@ -25,12 +25,12 @@
             <div class="col-md-3">
                 <ul class="list-group">
                   <li class="list-group-item d-flex justify-content-between align-items-center">
-                    已发布文章
-                    <span class="badge badge-primary badge-pill"><%= page.total %></span>
+                     <a href="/al/<%= token.userId %>">已发布文章</a>
+                    <span class="badge badge-primary badge-pill"></span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <a href="/ad/<%= token.userId %>">回收站</a>
-                    <span class="badge badge-primary badge-pill"></span>
+                    回收站
+                    <span class="badge badge-primary badge-pill"><%= page.total %></span>
                   </li>
                 </ul>
             </div>
@@ -42,15 +42,11 @@
                             <div class="card-header" id="heading<%= index %>">
                               <h2 class="mb-0">
                                 <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
-                                  <span class="badge badge-pill badge-light tdu">
+                                  <span class="badge badge-pill badge-light">
                                     <%= item.title %>
                                   </span>
                                 </button>
-                                <button type="button" class="btn btn-info fr ml-1">
-                                    <a href="/edit?id=<%= item.id %>" style="color: #fff;" class="tdn">编辑</a>
-                                </button>
-                                <button type="button" class="btn btn-secondary fr ml-1" onclick="deleteArticle(<%= item.id %>)">删除</button>
-                                <button type="button" class="btn btn-warning fr" onclick="transparentId(<%= item.id %>)" data-toggle="modal" data-target="#staticBackdrop">永久删除</button>
+                                <button type="button" class="btn btn-light fr" onclick="copyArticle(<%= item.id %>)">恢复</button>
                               </h2>
                             </div>
                             <div id="collapse<%= index %>" class="collapse" aria-labelledby="heading<%= index %>" data-parent="#accordionExample">
@@ -82,55 +78,23 @@
             </div>
             
         </div>
-        <%- include('./plugin')%>
+
         <%- include('./footer')%>
     </div>
 </body>
 </html>
 <script type="text/javascript">
     $(function(){
-        $('#staticBackdrop').on('shown.bs.modal', function (e) {
-            //console.log('shown.bs.modal')
-        })
-        $('#staticBackdrop').on('hidden.bs.modal', function (e) {
-            //console.log('hidden.bs.modal')
-        })
-        $('.btn-article-delete').on('click',function(){
-            var id = parseInt($(this).attr('data-id'));
-            if(id){
-                deleteForever(id)
-            }
-        });
-        function deleteForever(id){
-           pjaxs({
-            url:'/deleteForever',
-            method:'post',
-            data:{
-                id:id
-            },
-            headers: {'x-pjax': false},
-            }).then(function(res){
-                console.log(res)
-                 //手动关闭
-                $("#staticBackdrop").modal('hide');
-                setTimeout(function(){
-                    if(res && res.code == 200){
-                        window.location.reload();
-                    }else if(res.code == -306){
-                        window.location.href = '/login';
-                    }
-                },200)
-            }); 
-        }
+        
     });
 
-    function deleteArticle(id){
+    function copyArticle(id){
         pjaxs({
             url:'/deleteArticle',
             method:'post',
             data:{
                 id:id,
-                state:'1'
+                state:'0'
             },
             headers: {'x-pjax': false},
         }).then(function(res){
@@ -145,8 +109,5 @@
     function goNext(pageIndex,pageSize){
         //console.log(window.location)
         window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
-    }
-    function transparentId(id){
-        $('.btn-article-delete').attr('data-id',id);
     }
 </script>

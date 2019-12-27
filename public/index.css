@@ -14,12 +14,37 @@ pre {
 input:-webkit-autofill {
 	box-shadow: 0 0 0px 1000px white inset !important;
 }
-.mbn{
+
+*:active {
+	outline: none;
+	border: none;
+}
+
+*:focus {
+	outline: none;
+	box-shadow: none !important;
+}
+
+*:hover {
+	text-decoration: none !important;
+}
+
+.mbn {
 	margin-bottom: 0;
 }
-.bordernone{
-	border:none !important;
+
+.tdn {
+	text-decoration: none;
 }
+
+.tdu {
+	text-decoration: underline;
+}
+
+.bordernone {
+	border: none !important;
+}
+
 .tac {
 	text-align: center;
 }
@@ -89,8 +114,9 @@ input:-webkit-autofill {
 	border-radius: 5px;
 	padding: 10px;
 }
-.blog-article-list-li:hover{
-	border-color:#999;
+
+.blog-article-list-li:hover {
+	border-color: #999;
 }
 
 .blog-article-list-li .article-title {
@@ -110,7 +136,7 @@ input:-webkit-autofill {
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 2;
 	overflow: hidden;
-	text-decoration:none;
+	text-decoration: none;
 }
 
 .blog-article-list-li .article-author {
@@ -118,10 +144,11 @@ input:-webkit-autofill {
 	font-size: 12px;
 }
 
-.blog-article-list-li .article-follow{
+.blog-article-list-li .article-follow {
 	font-size: 12px;
 }
-.blog-article-list-li .article-follow b{
+
+.blog-article-list-li .article-follow b {
 	color: #ff9900;
 }
 
@@ -143,32 +170,35 @@ input:-webkit-autofill {
 	overflow: hidden;
 }
 
-.pagination-list{
+.pagination-list {
 	padding: 0 10px;
 	border-radius: 5px;
 	overflow: hidden;
 	display: inline-block;
 	margin: 0;
-    height: 28px;
-    font-size: 12px;
-    line-height: 30px;
-    border-width: 1px;
-    border-style: solid;
-    background-color: #f7f8fa;
-    border-color: #ccc;
-    cursor: pointer;
+	height: 28px;
+	font-size: 12px;
+	line-height: 30px;
+	border-width: 1px;
+	border-style: solid;
+	background-color: #f7f8fa;
+	border-color: #ccc;
+	cursor: pointer;
 }
-.pagination-list a{
+
+.pagination-list a {
 	color: #666;
 	display: block;
 	width: 100%;
 }
-.normal.current,.normal.current a{
+
+.normal.current, .normal.current a {
 	border-color: #3089dc;
-    background: #f7f8fa;
-    color: #3089dc;
-    cursor: default;
+	background: #f7f8fa;
+	color: #3089dc;
+	cursor: default;
 }
+
 .blog-advertisement-in {
 	border: 1px solid #ececec;
 	padding: 8px;

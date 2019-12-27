@@ -28,14 +28,9 @@ function query(options) {
 				} else {
 					reject(err);
 				}
-
 			} else {
-				if (sql.indexOf('insert into limited') < 0) {
-					console.log(`[${formatDate()}]:执行SQL语句,[${sql}]`);
-				}
-				
-				if (identifiers) {
-					if (typeof identifiers === 'object') {
+				if (identifiers || identifiers != '') {
+					if (identifiers != null && typeof identifiers === 'object') {
 						identifiers = identifiers.map(function(val, index) {
 							if (val.encryption && val.encryption == true) {
 								return MD5(val.values)
@@ -56,13 +51,16 @@ function query(options) {
 							if (response) {
 								response.json({
 									code: -102,
-									msg: `数据库操作${sql}时，参数错误！`
+									msg: `数据库操作[${sql}]时，参数错误！`
 								});
 								return;
 							} else {
 								reject(qerr);
 							}
 						} else {
+							if (!sql.includes('insert into limited')) {
+								console.log(`[${formatDate()}]:执行SQL语句,[${sql}]`);
+							}
 							resolve(vals);
 						}
 						//释放连接
@@ -74,13 +72,16 @@ function query(options) {
 							if (response) {
 								response.json({
 									code: -102,
-									msg: `数据库操作${sql}时，参数错误！`
+									msg: `数据库操作[${sql}]时，参数错误！`
 								});
 								return;
 							} else {
 								reject(qerr);
 							}
 						} else {
+							if (!sql.includes('insert into limited')) {
+								console.log(`[${formatDate()}]:执行SQL语句,[${sql}]`);
+							}
 							resolve(vals);
 						}
 						//释放连接
@@ -94,7 +95,7 @@ function query(options) {
 };
 
 //过滤sql关键字，防止注入
-function filterSQLKeys(){
+function filterSQLKeys() {
 
 }
 
