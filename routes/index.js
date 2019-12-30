@@ -16,7 +16,7 @@ router.get('/', async (request, response) => {
 	//同步请求
 	let totals = await query({
 		sql: sysUser.getArticleCount,
-		params:'0',
+		params: '0',
 		res: response
 	});
 	let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
@@ -86,8 +86,8 @@ router.get('/send', function(request, response) {
 
 router.get('/edit', function(request, response) {
 	//中间件已拦截登录状态，故不需要判断登录状态
-	console.log(request.query.id,request.query.state) 
-	if (request.query.id && request.query.id != '' && request.query.state && request.query.state !='') {
+	//console.log(request.query.id,request.query.state)
+	if (request.query.id && request.query.id != '' && request.query.state && request.query.state != '') {
 		query({
 			sql: sysUser.getArticleOwner,
 			params: [{
@@ -127,7 +127,7 @@ router.get('/edit', function(request, response) {
 	} else {
 		response.render('edit', {
 			title: '发布文章',
-			result:null,
+			result: null,
 			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 				userName: request.session.userName,
 				userId: request.session.userId
@@ -150,12 +150,20 @@ router.get('/a/:articleId', async (request, response) => {
 			values: 3
 		}]
 	});
+	let pageIndex = parseInt(request.query.p) || 1;
+	let pageSize = parseInt(request.query.s) || 5;
+	let totals = await query({
+		sql: sysUser.getReplyCount,
+		params: request.params.articleId,
+		res: response
+	});
+	let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
 	query({
 		sql: sysUser.getArticleById,
 		params: [{
-			values:request.params.articleId
-		},{
-			values:'0'
+			values: request.params.articleId
+		}, {
+			values: '0'
 		}],
 		res: response
 	}).then(function(rows) {
@@ -164,22 +172,61 @@ router.get('/a/:articleId', async (request, response) => {
 			response.render('error', {
 				title: '文章不存在',
 				result: '文章不存在',
+				replyMap: null,
+				page:null,
+				fmt: formatDate,
+				diff: dateDiff,
 				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 					userName: request.session.userName,
 					userId: request.session.userId
 				} : null,
 			})
 		} else {
-			response.render('article', {
-				title: rows[0].title,
-				result: rows[0],
-				hotsList:hots,
-				fmt: formatDate,
-				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
-					userName: request.session.userName,
-					userId: request.session.userId
-				} : null,
-			})
+			if (rows[0].reply == '0') {
+				query({
+					sql: sysUser.getReplyByArticleId,
+					params: [{
+						values: request.params.articleId
+					}, {
+						values: (pageIndex - 1) * pageSize
+					}, {
+						values: pageSize,
+					}]
+				}).then(function(row1) {
+					response.render('article', {
+						title: rows[0].title,
+						result: rows[0],
+						hotsList: hots,
+						fmt: formatDate,
+						diff: dateDiff,
+						replyMap: row1,
+						page: {
+							total: rowCounts,
+							pageIndex: pageIndex,
+							pageSize: pageSize,
+							pageCount: Math.ceil(rowCounts / pageSize)
+						},
+						token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+							userName: request.session.userName,
+							userId: request.session.userId
+						} : null,
+					})
+				})
+			} else {
+				response.render('article', {
+					title: rows[0].title,
+					result: rows[0],
+					hotsList: hots,
+					fmt: formatDate,
+					diff: dateDiff,
+					replyMap: null,
+					page:null,
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null,
+				})
+			}
 		}
 	})
 });
@@ -459,6 +506,13 @@ router.post('/publish', function(request, response) {
 		});
 		return;
 	};
+	if (request.body.title == '' || request.body.context == '') {
+		response.json({
+			code: -408,
+			msg: '部分字段异常请检查后重试！'
+		});
+		return;
+	};
 	let params = [{
 		values: request.checkUser.userName,
 		column: 'author'
@@ -520,18 +574,36 @@ router.post('/edits', function(request, response) {
 				});
 				return;
 			} else {
+				if (request.body.title == '' || request.body.context == '' || request.body.id == '') {
+					response.json({
+						code: -408,
+						msg: '部分字段异常请检查后重试！'
+					});
+					return;
+				};
 				query({
-					sql: sysUser.deleteArticleById,
+					sql: sysUser.updateEditById,
 					params: [{
-						values: request.body.id
+						values: request.body.reply || '0',
+					},{
+						values: request.body.title,
+						filterKeyWords: request.keywords,
 					}, {
-						values: request.session.userId
+						values: request.body.context,
+						filterKeyWords: request.keywords,
+					}, {
+						values: request.body.tags,
+						filterKeyWords: request.keywords,
+					}, {
+						values: formatDate()
+					}, {
+						values: request.body.id
 					}],
 					res: response
 				}).then(function(res) {
 					response.json({
 						code: 200,
-						msg: '文章永久删除成功！'
+						msg: '文章更新成功！'
 					});
 				})
 			}
@@ -672,10 +744,15 @@ router.post('/follow', function(request, response) {
 		let followed = parseInt(request.body.followed);
 		let userId = parseInt(request.body.userId)
 		let liker = parseInt(request.session.userId);
+		let state = request.body.state || '0';
 		//console.log(followed, userId, liker)
 		query({
 			sql: sysUser.getArticleById,
-			params: followed,
+			params: [{
+				values: followed
+			}, {
+				values: state
+			}],
 			res: response
 		}).then(function(rows) {
 			if (rows.length <= 0) {
@@ -768,10 +845,15 @@ router.post('/unfollow', function(request, response) {
 	} else {
 		let unfollowed = parseInt(request.body.unfollowed);
 		let unliker = parseInt(request.session.userId);
+		let state = request.body.state || '0';
 		//console.log(unfollowed, userId, liker)
 		query({
 			sql: sysUser.getArticleById,
-			params: unfollowed,
+			params: [{
+				values: unfollowed
+			}, {
+				values: state
+			}],
 			res: response
 		}).then(function(rows) {
 			if (rows.length <= 0) {
@@ -918,5 +1000,69 @@ router.post('/deleteForever', async (request, response) => {
 		});
 	}
 });
+
+
+router.post('/reply', async (request, response) => {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		let articleId = parseInt(request.body.id);
+		let userId = request.session.userId;
+		let content = request.body.reply;
+		if (!articleId || articleId == '' || !content || content == '') {
+			response.json({
+				code: -409,
+				msg: '评论内容参数异常！请检查后重试'
+			});
+			return;
+		}
+
+		query({
+			sql: sysUser.getArticleById,
+			params: [{
+				values: articleId
+			}, {
+				values: '0'
+			}],
+			res: response
+		}).then(function(rows) {
+			if (rows.length <= 0) {
+				response.json({
+					code: -405,
+					msg: '文章不存在'
+				});
+				return;
+			} else {
+				query({
+					sql: sysUser.intoReplyLog,
+					params: [{
+						values: articleId,
+						column: 'article_id'
+					}, {
+						values: userId,
+						column: 'user_id'
+					}, {
+						values: content,
+						filterKeyWords: request.keywords,
+						column: 'content',
+					}, {
+						values: formatDate(),
+						column: 'creat_time'
+					}],
+					res: response
+				}).then(function(res) {
+					response.json({
+						code: 200,
+						msg: '评论成功！'
+					});
+				})
+			}
+		})
+	}
+})
 
 module.exports = router;

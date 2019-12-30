@@ -47,10 +47,13 @@
                                   </span>
                                 </button>
                                 <button type="button" class="btn btn-info fr ml-1">
-                                    <a href="/edit?id=<%= item.id %>" style="color: #fff;" class="tdn">编辑</a>
+                                    <a href="/edit?id=<%= item.id %>&state=<%= item.state %>" style="color: #fff;" class="tdn">编辑</a>
                                 </button>
                                 <button type="button" class="btn btn-secondary fr ml-1" onclick="deleteArticle(<%= item.id %>)">删除</button>
-                                <button type="button" class="btn btn-warning fr" onclick="transparentId(<%= item.id %>)" data-toggle="modal" data-target="#staticBackdrop">永久删除</button>
+                                <button type="button" class="btn btn-warning fr ml-1" onclick="transparentId(<%= item.id %>)" data-toggle="modal" data-target="#staticBackdrop">永久删除</button>
+                                <button type="button" class="btn btn-info fr ">
+                                评论<% if(item.reply == '0') { %>已开启<% } else { %>关闭<% } %>
+                                </button>
                               </h2>
                             </div>
                             <div id="collapse<%= index %>" class="collapse" aria-labelledby="heading<%= index %>" data-parent="#accordionExample">

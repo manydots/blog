@@ -34,6 +34,17 @@
                                 <textarea class="form-control" id="context" placeholder="文章内容" aria-label="文章内容"><%if(result){%><%= result.context %><%}%></textarea>
                             </div>
                         </div>
+                        <% if(result) { %>
+                            <div class="form-group">
+                                <label  class="control-label">评论</label>
+                                <div class="">
+                                    <select class="form-control" id="reply">
+                                        <option value="0" <% if(result.reply == '0') { %>selected<% } %> >开启</option>
+                                        <option value="1" <% if(result.reply == '1') { %>selected<% } %>>关闭</option>
+                                    </select>
+                                </div>
+                            </div>
+                        <% } %>
                         <div class="form-group">
                             <label for="name" class="control-label">文章标签</label>
                             <div class="">
@@ -62,19 +73,20 @@
             var API = <% if(result) { %>'/edits'<% } else { %>'/publish'<% } %>;
             var id = <% if(result) { %><%= result.id %><% } else { %>null<% } %>;
             $('.btn-Public').on('click',function(){
-                var title = $('#title').val();
-                var context = $('#context').val();
-                var tags = $('#tags').val();
-                if(title == '' || context == '' || tags == ''){
-                    $('.alert-warning').html('请输入文章标题、内容、标签');
+                var title = $('#title').val() || '';
+                var context = $('#context').val() || '';
+                var tags = $('#tags').val() || '';
+                var reply = $('#reply').val() || '0';
+                if(title == '' || context == ''){
+                    $('.alert-warning').html('请输入文章标题、内容');
                     $('.alert-warning').show();
                     return;
                 }else{
                     $('.alert-warning').hide();
-                    onPublic(title,context,tags);
+                    onPublic(title,context,tags,reply);
                 }
             })
-            function onPublic(title,context,tags){
+            function onPublic(title,context,tags,reply){
                 pjaxs({
                 url:API,
                 method:'post',
@@ -82,6 +94,7 @@
                     title:title,
                     context:context,
                     tags:tags,
+                    reply:reply,
                     id:id
                 },
                 }).then(function(res){

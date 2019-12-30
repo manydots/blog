@@ -25,12 +25,14 @@
                 <div class="jumbotron">
                   <h1 class="display-5"><%= result.title %></h1>
                   <p class="lead article-author">
-                    作者：<%= result.author %> 最近修改：<%= fmt(result.modify_time) %>
+                    <%= result.author %> 最近修改 <%= fmt(result.modify_time) %>
                     <span class="badge badge-pill badge-info"><%= result.tags %></span>
                   </p>
                   <hr class="my-4">
-                  <p class="article-context"><%= result.context %></p>
+                  <p class="article-context text-wrap text-break"><%= result.context %></p>
                  <!--  <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a> -->
+                </div>
+                <div class="mb-3">
                 </div>
             </div>
             <div class="col-md-3">
@@ -39,15 +41,116 @@
                 </div>
                 <% if (hotsList.length) { %>
                     <% hotsList.forEach(function(item,index){ %>
-                        <span class="badge badge-pill badge-light">
+                        <span class="badge badge-pill badge-light text-wrap">
                             <a href="/a/<%= item.id %>" style="color: #212529;text-decoration: none;"><%= item.title %></a>
                         </span>
                     <% }) %>
                 <% } %>
             </div>
+
+              <% if(result.reply == '0') { %>
+              <div class="col-md-9">
+                <nav aria-label="breadcrumb">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item active" aria-current="page">
+                      文明上网理性发言，请遵守新闻评论服务协议
+                    </li>
+                  </ol>
+                </nav>
+                <div class="media mb10 shadow p-3 mb-5 bg-white rounded border">
+                    <div class="align-self-start mr-3" style="width: 50px;height: 50px;">
+                        <img src="/static/head.png"  style="display: block;width: 100%;" alt="...">
+                    </div>
+                    <div class="media-body">
+                        <div class="form-group">
+                            <textarea rows="5" id="replay-context" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便说几句吧..."></textarea>
+                            <label class="clearfix mt-2" style="display: block;width: 100%">
+                              <% if(token) { %>
+                                  <button type="button" class="btn btn-dark btn-replay float-right">发布评论</button>
+                              <% } else { %>
+                                  <button type="button" class="btn btn-primary btn-replay float-right">登录后评论</button>
+                              <% } %>
+                              
+                            </label>
+                        </div>
+                    </div>
+                </div>
+              </div>
+              <div class="col-md-9 mb-4">
+                   <% if(replyMap && replyMap.length) { %>
+                      <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                          <li class="breadcrumb-item active" aria-current="page">
+                            最新评论 <% if (page && page != null) { %>
+                            <span class="badge badge-primary"><%= page.total %></span> <% } %>
+                          </li>
+                        </ol>
+                      </nav>
+                      <% replyMap.forEach(function(item,index){ %>
+                          <div class="toast show" style="max-width: 100%;">
+                            <div class="toast-header">
+                              <strong class="mr-auto"><%= item.user_name %>:<%= item.content %></strong>
+                              <small class="text-muted"><%= diff(new Date(fmt(item.creat_time)).getTime()) %> </small>
+                            </div>
+                          </div>
+                      <% }) %>
+                   <% } %>
+                   <% if (page.pageCount > 1) { %>
+                    <nav aria-label="...">
+                      <ul class="pagination pagination-sm">
+                        <li class="page-item">
+                          <a href="/a/<%= result.id %>?p=<%= page.pageIndex %>&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >首页</a>
+                        </li>
+                        <% for(var i=1;i<=page.pageCount;i++){%>
+                            <li data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>active<% } %> page-item" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
+                                <a class="page-link" href="javascript:;"><%= i %><span class="sr-only">(current)</span></a>
+                            </li> 
+                        <% } %>
+                        <li class="page-item">
+                          <a href="/a/<%= result.id %>?p=<%= page.pageCount %>&p=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >尾页</a>
+                        </li>
+                      </ul>
+                    </nav>
+                    <% } %>
+              </div>
+              <% } else { %>
+
+              <% } %>
         </div>
         <%- include('./footer')%>
      </div>
     <% } %>
 </body>
+<script type="text/javascript">
+    $(function(){
+            $('.btn-replay').on('click',function(){
+                var replayContext = $('#replay-context').val() || '';
+                console.log(replayContext)
+                onReply(replayContext);
+            })
+            function onReply(reply){
+                pjaxs({
+                url:'/reply',
+                method:'post',
+                data:{
+                  reply:reply,
+                  id:<%= result.id %>
+                },
+                }).then(function(res){
+                    console.log(res)
+                    if(res.code == -306){
+                      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname+window.location.search)}`;
+                    }else if(res.code == 200){
+                      setTimeout(function(){
+                           location.reload(true);
+                      },50)
+                    }
+                });
+            }
+    })
+    function goNext(pageIndex,pageSize){
+        //console.log(window.location)
+        window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
+    }
+</script>
 </html>

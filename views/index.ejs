@@ -33,15 +33,14 @@
                         </div>
                         <div class="media-body">
                             <h5 class="mt-0 article-title"><%= item.title %></h5>
-                            <p class="article-context">
+                            <p class="article-context text-wrap text-break">
                                 <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
                             </p>
                             <p class="article-author mbn">
-                                作者:<%= item.author %> 
-                                最近修改:<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
-                                <span class="badge badge-pill badge-info">
-                                    <%= item.tags %> 
-                                </span>
+                                <%= item.author %> 发布于<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 
+                                <% if(item.tags) { %>
+                                    <span class="badge badge-pill badge-info"><%= item.tags %></span>
+                                <% } %>
                             </p>
                             <p class="article-follow mbn">
                             <b><% if(item.follower) { %><%= item.follower.split(',').length -1 %><% } else { %>0<% } %></b>人已赞
