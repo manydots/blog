@@ -74,9 +74,19 @@
                 </div> -->
             </div>
             <div class="col-md-3 mb10">
-                <div class="blog-advertisement-in">
-                    这里是普通占位~可放广告或者其他热搜文章
-                    <div id="pjax-container">pjax-container</div> 
+                <h6 class="text-secondary">热搜关键字</h6>
+                <div class="">
+                <% if (hots) { %>
+                    <div class="list-group">
+                    <% hots.forEach(function(item,index){ %>
+                      <a href="/search?k=<%= item.keywords %>" data-spm-disabled="true" class="list-group-item list-group-item-action">
+                        <%= item.keywords %> <span class="badge badge-light"><%= item.total %></span>
+                      </a>
+                    <% }) %>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-secondary" role="alert">暂无数据</div>
+                <% } %>
                 </div>
             </div>
             

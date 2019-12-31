@@ -58,7 +58,7 @@ function query(options) {
 								reject(qerr);
 							}
 						} else {
-							if (!sql.includes('insert into limited')) {
+							if (!sql.includes('insert into limited') && options.params && options.params.isLog) {
 								console.log(`[${formatDate()}]:执行SQL语句,[${sql}]`);
 							}
 							resolve(vals);
@@ -79,7 +79,7 @@ function query(options) {
 								reject(qerr);
 							}
 						} else {
-							if (!sql.includes('insert into limited')) {
+							if (!sql.includes('insert into limited') && options.params && options.params.isLog) {
 								console.log(`[${formatDate()}]:执行SQL语句,[${sql}]`);
 							}
 							resolve(vals);

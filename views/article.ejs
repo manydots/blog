@@ -29,7 +29,7 @@
                     <span class="badge badge-pill badge-info"><%= result.tags %></span>
                   </p>
                   <hr class="my-4">
-                  <p class="article-context text-wrap text-break"><%= result.context %></p>
+                  <p class="article-context text-wrap text-break"><%- result.context %></p>
                  <!--  <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a> -->
                 </div>
                 <div class="mb-3">
@@ -86,11 +86,19 @@
                           </li>
                         </ol>
                       </nav>
+                      
                       <% replyMap.forEach(function(item,index){ %>
                           <div class="toast show" style="max-width: 100%;">
-                            <div class="toast-header">
-                              <strong class="mr-auto"><%= item.user_name %>:<%= item.content %></strong>
-                              <small class="text-muted"><%= diff(new Date(fmt(item.creat_time)).getTime()) %> </small>
+                            <div class="toast-header" 
+                              data-key="<%= item.id %>"
+                              data-articleId="<%= item.article_id %>" 
+                              data-from="<%= item.from_user_id %>" >
+                              <strong class="mr-auto">
+                                <%= item.user_name %>:<%= item.content %>
+                              </strong>
+                              <small class="text-muted ml-3 GO cursor" onclick="onReplyTo(<%= index %>,<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>)" >回复</small>
+                              <small class="text-muted ml-3 GO cursor" onclick="onGetReplyTo(<%= item.id %>,<%= item.article_id %>)" >查看回复</small>
+                              <small class="text-muted ml-3"><%= diff(new Date(fmt(item.creat_time)).getTime()) %></small>
                             </div>
                           </div>
                       <% }) %>
@@ -107,7 +115,7 @@
                             </li> 
                         <% } %>
                         <li class="page-item">
-                          <a href="/a/<%= result.id %>?p=<%= page.pageCount %>&p=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >尾页</a>
+                          <a href="/a/<%= result.id %>?p=<%= page.pageCount %>&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >尾页</a>
                         </li>
                       </ul>
                     </nav>
@@ -147,10 +155,40 @@
                     }
                 });
             }
+
+            
     })
     function goNext(pageIndex,pageSize){
         //console.log(window.location)
         window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
+    }
+    function onGetReplyTo(replyId,articleId){
+        pjaxs({
+        url:'/getReply',
+        method:'post',
+        data:{
+          replyId:replyId,
+          articleId:articleId,
+        },
+        }).then(function(res){
+            console.log(res)
+        });
+    }
+    function onReplyTo(content,replyId,articleId,toUserId){
+        console.log(content,replyId,articleId,toUserId)
+        return;
+        pjaxs({
+        url:'/replyTo',
+        method:'post',
+        data:{
+          content:content,
+          replyId:replyId,
+          articleId:articleId,
+          toUserId:toUserId
+        },
+        }).then(function(res){
+            console.log(res)
+        });
     }
 </script>
 </html>

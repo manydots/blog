@@ -60,8 +60,19 @@ function replaceParam(paramName, replaceWith) {
   window.location.href = nUrl
 }
 
-function checkMail(v) {
-  //^([a-z0-9A-Z]+[-|_|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$
-  var reg = /^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$/;
-  return reg.test(v);
+function clickGo(href, target) {
+  var a = document.createElement('a');
+  var nodeName = 'GO_SEARCH_AUTO';
+  a.style.display = 'none';
+  a.setAttribute('href', href);
+  a.setAttribute('target', target || '_blank');
+  a.setAttribute('id', nodeName);
+  // 防止反复添加
+  if (!document.getElementById(nodeName) || document.getElementById(nodeName).length == 0) {
+    document.body.appendChild(a);
+  }
+  a.click();
+  if (document.getElementById(nodeName)) {
+    document.body.removeChild(document.getElementById(nodeName));
+  }
 }

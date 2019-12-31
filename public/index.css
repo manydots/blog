@@ -17,7 +17,6 @@ input:-webkit-autofill {
 
 *:active {
 	outline: none;
-	border: none;
 }
 
 *:focus {

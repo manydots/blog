@@ -19,6 +19,7 @@ router.get('/', async (request, response) => {
 		params: '0',
 		res: response
 	});
+	let hots = await query({sql:sysUser.getSearchHots,res:response});
 	let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
 	let params = [{
 		values: '0',
@@ -38,6 +39,7 @@ router.get('/', async (request, response) => {
 			result: rows,
 			fmt: formatDate,
 			diff: dateDiff,
+			hots:hots,
 			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 				userName: request.session.userName,
 				userId: request.session.userId
@@ -391,6 +393,161 @@ router.get('/token/:tokens', function(request, response) {
 		})
 	}
 });
+
+router.get('/search', async (request, response) => {
+	let pageIndex = parseInt(request.query.p) || 1;
+	let pageSize = parseInt(request.query.s) || 5;
+	let keyWords = request.query.k || '';
+	let hots = await query({sql:sysUser.getSearchHots,res:response});
+	//`%${keyWords}%`
+	if (keyWords && keyWords != '') {
+		if (keyWords.length > 50) {
+			response.render('search', {
+				title: `关键词[${keyWords}]50字以下`,
+				code: 200,
+				keywords: keyWords,
+				result: null,
+				page: null,
+				hots:hots,
+				fmt: formatDate,
+				diff: dateDiff,
+				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+					userName: request.session.userName,
+					userId: request.session.userId
+				} : null
+			});
+			return;
+		};
+		query({
+			sql: sysUser.getSearchLog,
+			params: [{
+				values: keyWords,
+				filterKeyWords: request.keywords,
+				column: 'keywords'
+			}]
+		}).then(function(rows) {
+			if (!rows[0] || !rows[0].total) {
+				query({
+					sql: sysUser.intoSearchLog,
+					params: [{
+						values: keyWords,
+						filterKeyWords: request.keywords,
+						column: 'keywords'
+					}, {
+						values: 1,
+						column: 'total'
+					}, {
+						values: formatDate(),
+						column: 'creat_time'
+					}, {
+						values: formatDate(),
+						column: 'modify_time'
+					}],
+					res: response
+				}).then(function(res) {
+					console.log(`关键词:[${keyWords}],总数:[1];搜索日志插入成功!`);
+				});
+			} else {
+				query({
+					sql: sysUser.updateSearchLog,
+					params: [{
+						values: rows[0].total + 1
+					}, {
+						values: formatDate()
+					}, {
+						values: rows[0].id
+					}],
+					res: response
+				}).then(function(res) {
+					console.log(`关键词:[${keyWords}],总数:[${rows[0].total+1}];搜索日志更新成功!`);
+				})
+
+			}
+		})
+	} else {
+		response.render('search', {
+			title: `关键词为空`,
+			code: 200,
+			keywords: keyWords,
+			result: null,
+			page: null,
+			hots:hots,
+			fmt: formatDate,
+			diff: dateDiff,
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null
+		});
+		return;
+	}
+	query({
+		sql: sysUser.getSearchCount,
+		params: [{
+			values: `%${keyWords}%`
+		}, {
+			values: `%${keyWords}%`
+		}, {
+			values: '0'
+		}],
+		res: response
+	}).then(function(res) {
+		let rowCounts = res[0].total && res[0].total != '' && res[0].total != null ? res[0].total : 0;
+		if (rowCounts <= 0 || keyWords == '') {
+			response.render('search', {
+				title: `暂未查询到关键词[${keyWords}]结果`,
+				code: 200,
+				keywords: keyWords,
+				result: null,
+				page: null,
+				hots:hots,
+				fmt: formatDate,
+				diff: dateDiff,
+				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+					userName: request.session.userName,
+					userId: request.session.userId
+				} : null
+			});
+		} else {
+			query({
+				sql: sysUser.getSearchMap,
+				params: [{
+					values: `%${keyWords}%`
+				}, {
+					values: `%${keyWords}%`
+				}, {
+					values: '0'
+				}, {
+					values: (pageIndex - 1) * pageSize
+				}, {
+					values: pageSize
+				}],
+				res: response
+			}).then(function(rows) {
+				response.render('search', {
+					title: `查询到关键词[${keyWords}]结果`,
+					code: 200,
+					result: rows,
+					keywords: keyWords,
+					fmt: formatDate,
+					diff: dateDiff,
+					hots:hots,
+					page: {
+						total: rowCounts,
+						pageIndex: pageIndex,
+						pageSize: pageSize,
+						pageCount: Math.ceil(rowCounts / pageSize)
+					},
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null
+				});
+			})
+		}
+	})
+});
+
 
 router.post('/login', function(request, response) {
 	let params = [{
@@ -1043,8 +1200,11 @@ router.post('/reply', async (request, response) => {
 						values: articleId,
 						column: 'article_id'
 					}, {
+						values: rows[0].user_id,
+						column: 'to_user_id'
+					}, {
 						values: userId,
-						column: 'user_id'
+						column: 'from_user_id'
 					}, {
 						values: content,
 						filterKeyWords: request.keywords,
@@ -1062,6 +1222,64 @@ router.post('/reply', async (request, response) => {
 				})
 			}
 		})
+	}
+})
+
+router.post('/getReply', async (request, response) => {
+	let replyId = parseInt(request.body.replyId);
+	let articleId = parseInt(request.body.articleId);
+	query({
+		sql: sysUser.getReplyByUser,
+		params: [{
+			values: replyId
+		}, {
+			values: articleId
+		}],
+		res: response
+	}).then(function(rows) {
+		response.json({
+			code: 200,
+			result:rows
+		});
+	})
+
+});
+
+router.post('/replyTo', async (request, response) => {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		let content = request.body.content;
+		let replyId = parseInt(request.body.replyId);
+		let articleId = parseInt(request.body.articleId);
+		let toUserId = parseInt(request.body.toUserId);
+		let userId = request.session.userId;
+		console.log(content,replyId,articleId,toUserId,userId)
+		query({
+			sql:sysUser.intoReplyByUser,
+			params:[{
+				values:replyId,
+			},{
+				values:articleId,
+			},{
+				values:userId,
+			},{
+				values:toUserId,
+			},{
+				values:content,
+				filterKeyWords: request.keywords,
+				column: 'content',
+			},{
+				values:formatDate(),
+			}],
+			res:response
+		})
+
+		
 	}
 })
 

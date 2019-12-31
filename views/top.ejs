@@ -31,6 +31,14 @@
             <li class="nav-item">
                 <a class="nav-link" href="/">首页</a>
             </li>
+            <li>
+                <div class="input-group">
+                  <input type="text" maxlength="20" class="form-control Search-For-Keywords" placeholder="随便试试...">
+                  <div class="input-group-append">
+                    <span class="input-group-text btn btn-primary cursor Search-For-Go">search</span>
+                  </div>
+                </div>
+            </li>
         </ul>
 	</div>
 </div>
@@ -53,5 +61,14 @@
                     }
                 });
             }
+            $('.Search-For-Go').on('click',function(){
+                var keywords = $('.Search-For-Keywords').val();
+                if(keywords && keywords != ''){
+                    console.log(`/search?k=${keywords}`);
+                    clickGo(`/search?k=${keywords}`,'_self');
+                }else{
+                    console.log('keywords值为空')
+                }
+            })
     })
 </script>
