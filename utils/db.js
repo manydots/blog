@@ -37,7 +37,7 @@ function query(options) {
 							} else if (val.filterKeyWords) {
 								if (val.filterKeyWords) {
 									val.filterKeyWords.map(function(v) {
-										val.values = val.values.replace(v, '*');
+										val.values = val.values.replace(new RegExp(v,'g'), '*');
 									});
 								}
 								return val.values;

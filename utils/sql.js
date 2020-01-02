@@ -29,7 +29,7 @@ var sysUser = {
 	updateSearchLog: 'UPDATE article_search SET total = ? , modify_time = ? WHERE id = ?',
 	getSearchHots: 'SELECT a.id,a.keywords,a.total FROM article_search a WHERE a.keywords NOT LIKE "%*%" order by a.total desc limit 0,5',
 	intoReplyByUser: 'INSERT INTO article_reply_to (reply_id,article_id,from_user_id,to_user_id,content,creat_time) values(?,?,?,?,?,?)',
-	getReplyByUser:'SELECT id,from_user_id,to_user_id,content,creat_time FROM article_reply_to WHERE reply_id = ? AND article_id = ?'
+	getReplyByUser:'SELECT ar.id,ar.from_user_id,ar.to_user_id,ar.content,su.user_name from_user_nick,ar.creat_time FROM article_reply_to ar LEFT JOIN sys_user su on su.id = ar.from_user_id WHERE ar.reply_id = ? AND ar.article_id = ? order by creat_time desc limit 0,20'
 };
 
 var {

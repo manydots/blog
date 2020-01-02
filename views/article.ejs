@@ -6,6 +6,7 @@
     <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="/static/index.js"></script>
+    <script src="/static/doT.min.js"></script>
     <%- include('./header')%>
     <style>
         *:focus {outline: none; box-shadow:none !important;}
@@ -63,7 +64,7 @@
                     </div>
                     <div class="media-body">
                         <div class="form-group">
-                            <textarea rows="5" id="replay-context" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便说几句吧..."></textarea>
+                            <textarea maxlength="120" rows="5" id="replay-context" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便说几句吧..."></textarea>
                             <label class="clearfix mt-2" style="display: block;width: 100%">
                               <% if(token) { %>
                                   <button type="button" class="btn btn-dark btn-replay float-right">发布评论</button>
@@ -96,9 +97,26 @@
                               <strong class="mr-auto">
                                 <%= item.user_name %>:<%= item.content %>
                               </strong>
-                              <small class="text-muted ml-3 GO cursor" onclick="onReplyTo(<%= index %>,<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>)" >回复</small>
-                              <small class="text-muted ml-3 GO cursor" onclick="onGetReplyTo(<%= item.id %>,<%= item.article_id %>)" >查看回复</small>
+                              <!-- <small class="text-muted ml-3 GO cursor" onclick="onReplyTo(<%= index %>,<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>)" >回复</small> -->
+                              <small class="text-muted ml-3 GO cursor" onclick="onGetReplyTo(<%= item.id %>,<%= item.article_id %>,this)" >查看回复</small>
                               <small class="text-muted ml-3"><%= diff(new Date(fmt(item.creat_time)).getTime()) %></small>
+                            </div>
+                            <div class="toast-body" style="display: none;">
+                                <div class="replyToMap"></div>
+                                <div class="replyToOne">
+                                  <div class="media-body">
+                                      <div class="form-group">
+                                          <textarea rows="3" maxlength="120" class="rtc" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便回复几句吧..."></textarea>
+                                          <label class="clearfix mt-2" style="display: block;width: 100%">
+                                            <% if(token) { %>
+                                                <button type="button" class="btn btn-dark float-right" onclick="onReplyTo(<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>,this)" >回复</button>
+                                            <% } else { %>
+                                                <button type="button" class="btn btn-primary float-right" onclick="onReplyTo(<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>,this)" >请先登录</button>
+                                            <% } %>
+                                          </label>
+                                      </div>
+                                  </div>
+                                </div>
                             </div>
                           </div>
                       <% }) %>
@@ -107,7 +125,7 @@
                     <nav aria-label="...">
                       <ul class="pagination pagination-sm">
                         <li class="page-item">
-                          <a href="/a/<%= result.id %>?p=<%= page.pageIndex %>&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >首页</a>
+                          <a href="/a/<%= result.id %>?p=1&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >首页</a>
                         </li>
                         <% for(var i=1;i<=page.pageCount;i++){%>
                             <li data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>active<% } %> page-item" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
@@ -129,6 +147,15 @@
      </div>
     <% } %>
 </body>
+<script id="template-tmpl" type="text/template">
+      {{~it:v:index}}
+      <div class="shadow-sm mb-1 p-2 bg-white rounded clearfix">
+          <b class="float-left tar" style="width:15%">{{=v.from_user_nick}}回复：</b>
+          <strong class="float-left" style="width:70%">{{=v.content}}</strong>
+          <span class="text-muted float-right tar" style="width:15%">{{=dateDiff(new Date(formatDate(v.creat_time)).getTime())}}</span>
+      </div>
+      {{~}}
+</script>
 <script type="text/javascript">
     $(function(){
             $('.btn-replay').on('click',function(){
@@ -162,7 +189,8 @@
         //console.log(window.location)
         window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
     }
-    function onGetReplyTo(replyId,articleId){
+    function onGetReplyTo(replyId,articleId,_this){
+        
         pjaxs({
         url:'/getReply',
         method:'post',
@@ -171,12 +199,20 @@
           articleId:articleId,
         },
         }).then(function(res){
-            console.log(res)
+            $('.toast-body').hide();
+            if(res && res.code == 200 && res.result && res.result.length > 0){
+              var template = doT.template($("#template-tmpl").html());
+              $(_this).parent('.toast-header').siblings('.toast-body').show().find('.replyToMap').html(template(res.result))
+            }else{
+              $(_this).parent('.toast-header').siblings('.toast-body').show();
+            }
         });
     }
-    function onReplyTo(content,replyId,articleId,toUserId){
-        console.log(content,replyId,articleId,toUserId)
-        return;
+    function onReplyTo(replyId,articleId,toUserId,_this){
+        var content = $(_this).parent().siblings('.rtc').val();
+        if(!content || content == ''){
+            return;
+        }
         pjaxs({
         url:'/replyTo',
         method:'post',
@@ -187,7 +223,15 @@
           toUserId:toUserId
         },
         }).then(function(res){
-            console.log(res)
+            if(res.code == -306){
+              window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname+window.location.search)}`;
+            }else if(res.code == 200){
+              setTimeout(function(){
+                   location.reload(true);
+              },50)
+            }else{
+              console.log(res.msg)
+            }
         });
     }
 </script>

@@ -1176,6 +1176,12 @@ router.post('/reply', async (request, response) => {
 				msg: '评论内容参数异常！请检查后重试'
 			});
 			return;
+		}else if(content.length > 120){
+			response.json({
+				code: -412,
+				msg: '评论内容过长！'
+			});
+			return;
 		}
 
 		query({
@@ -1239,7 +1245,7 @@ router.post('/getReply', async (request, response) => {
 	}).then(function(rows) {
 		response.json({
 			code: 200,
-			result:rows
+			result: rows
 		});
 	})
 
@@ -1258,28 +1264,45 @@ router.post('/replyTo', async (request, response) => {
 		let articleId = parseInt(request.body.articleId);
 		let toUserId = parseInt(request.body.toUserId);
 		let userId = request.session.userId;
-		console.log(content,replyId,articleId,toUserId,userId)
+		//未做文章校验
+		//console.log(content, replyId, articleId, toUserId, userId)
+		if(!content || content == ''){
+			response.json({
+				code: -410,
+				msg: '回复评论内容为空！'
+			});
+			return;
+		}else if(content.length > 120){
+			response.json({
+				code: -411,
+				msg: '回复评论内容过长！'
+			});
+			return;
+		}
 		query({
-			sql:sysUser.intoReplyByUser,
-			params:[{
-				values:replyId,
-			},{
-				values:articleId,
-			},{
-				values:userId,
-			},{
-				values:toUserId,
-			},{
-				values:content,
+			sql: sysUser.intoReplyByUser,
+			params: [{
+				values: replyId,
+			}, {
+				values: articleId,
+			}, {
+				values: userId,
+			}, {
+				values: toUserId,
+			}, {
+				values: content,
 				filterKeyWords: request.keywords,
 				column: 'content',
-			},{
-				values:formatDate(),
+			}, {
+				values: formatDate(),
 			}],
-			res:response
+			res: response
+		}).then(function(res) {
+			response.json({
+				code: 200,
+				msg: '回复评论成功！'
+			});
 		})
-
-		
 	}
 })
 

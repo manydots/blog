@@ -47,7 +47,9 @@ input:-webkit-autofill {
 .tac {
 	text-align: center;
 }
-
+.tar {
+	text-align: right;
+}
 .wp100 {
 	width: 100% !important;
 	clear: both;
