@@ -1,6 +1,6 @@
 const { getKeys, getClientIp, formatDate } = require('../utils/index');
 const { sign, verify} = require('../utils/jwt');
-const { sysUser,query } = require('../utils/sql');
+//const { sysUser,query } = require('../utils/sql');
 
 function middleware(router) {
 	return router.use((req, res, next) => {
@@ -60,15 +60,17 @@ function middleware(router) {
 								res.ioServer.sockets.emit('Queues', {
 									time: formatDate(),
 									newsType: "server-prop-sendQueue",
+									sql:intoLimitLog,
+									params:params,
 									dataType: 'sendQueue'
 								});
 							}
 							//console.log(rows.insertId)
-							query({
-								sql:sysUser.intoLimitLog,
-								params:params,
-								res:res
-							});
+							// query({
+							// 	sql:sysUser.intoLimitLog,
+							// 	params:params,
+							// 	res:res
+							// });
 						}
 					});
 				}

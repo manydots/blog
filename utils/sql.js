@@ -17,6 +17,7 @@ var sysUser = {
 	intoFollowLog: 'insert into article_follow (article_id,user_id,type,follower,creat_time) values(?,?,?,?,?)',
 	updateFollowLog: 'UPDATE article_follow SET follower = ? , creat_time = ? WHERE article_id = ?',
 	intoLimitLog: 'insert into limited (api,method,ip,creat_time) values(?,?,?,?)',
+	intoLimitBatchLog: 'INSERT INTO limited (api,method,ip,creat_time) VALUES ?',
 	getKeyWords: 'SELECT context FROM keywords',
 	updateUser: 'UPDATE sys_user SET token = ? WHERE id = ?',
 	deleteArticleById: 'DELETE FROM article WHERE id = ? AND user_id = ?',

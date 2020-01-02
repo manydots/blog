@@ -14,8 +14,9 @@
 ### 项目部署
 ```
 
-	使用wss建立websoket时需要注意:
-  nginx需要配置:(或者查看https://github.com/manydots/node)
+	使用wss建立websoket时需要注意: 查看https://github.com/manydots/node
+
+  #可负载均衡
 
 	server {
         listen 443 ssl;
@@ -73,5 +74,12 @@
   node-schedule:定时任务
   express-rate-limit:访问限制20s内60次
   apicache:缓存1.2s
+
+```
+
+### 更新日志
+```javascript
+  
+  1、访问日志改用批量插入模式；
 
 ```

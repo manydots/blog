@@ -30,7 +30,7 @@ function query(options) {
 				}
 			} else {
 				if (identifiers || identifiers != '') {
-					if (identifiers != null && typeof identifiers === 'object') {
+					if (identifiers != null && typeof identifiers === 'object' && !options.batch) {
 						identifiers = identifiers.map(function(val, index) {
 							if (val.encryption && val.encryption == true) {
 								return MD5(val.values)
@@ -44,8 +44,11 @@ function query(options) {
 							} else {
 								return val.values;
 							}
-						})
+						});
+					}else if(identifiers != null && typeof identifiers === 'object' && options.batch){
+						identifiers = [identifiers];
 					}
+					
 					connect.query(sql, identifiers, function(qerr, vals, fields) {
 						if (qerr) {
 							if (response) {
