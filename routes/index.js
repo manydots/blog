@@ -5,7 +5,7 @@ const { sign,verify } = require('../utils/jwt');
 const { cookieMaxAge } = require('../utils/config');
 const { formatDate,dateDiff,curryingCheck} = require('../utils/index');
 const { sendMails } = require('../utils/sendMail');
-
+var emoji = require('node-emoji')
 var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
 var checkMail = curryingCheck('^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$');
 
@@ -142,6 +142,7 @@ router.get('/edit', function(request, response) {
 
 router.get('/a/:articleId', async (request, response) => {
 	//let keys = Object.keys(request.params);
+
 	let hots = await query({
 		sql: sysUser.getArticleAll,
 		params: [{
@@ -178,6 +179,7 @@ router.get('/a/:articleId', async (request, response) => {
 				page:null,
 				fmt: formatDate,
 				diff: dateDiff,
+				emoji:emoji,
 				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 					userName: request.session.userName,
 					userId: request.session.userId
@@ -202,6 +204,7 @@ router.get('/a/:articleId', async (request, response) => {
 						fmt: formatDate,
 						diff: dateDiff,
 						replyMap: row1,
+						emoji:emoji,
 						page: {
 							total: rowCounts,
 							pageIndex: pageIndex,
@@ -221,6 +224,7 @@ router.get('/a/:articleId', async (request, response) => {
 					hotsList: hots,
 					fmt: formatDate,
 					diff: dateDiff,
+					emoji:emoji,
 					replyMap: null,
 					page:null,
 					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
@@ -231,6 +235,55 @@ router.get('/a/:articleId', async (request, response) => {
 			}
 		}
 	})
+});
+
+router.get('/news/:userId', async (request, response) => {
+
+	let state = request.query.st && request.query.st != '' && request.query.st != undefined ? request.query.st : '1';
+	let tips = '已读消息';
+	if (state == '1') {
+		tips = '未读消息'
+	};
+
+	if (!request.session.token) {
+		response.redirect('/login');
+		return;
+	} else {
+		if (request.params.userId == request.session.userId) {
+			let userId = parseInt(request.params.userId);
+			let pageIndex = parseInt(request.query.p) || 1;
+			let pageSize = parseInt(request.query.s) || 5;
+			query({
+				sql: sysUser.getNoticeLogByUserId,
+				params: [{
+					values: userId
+				}, {
+					values: state
+				}, {
+					values: (pageIndex - 1) * pageSize
+				}, {
+					values: pageSize
+				}]
+			}).then(function(rows) {
+				response.render('news', {
+					title: `消息记录-${tips}`,
+					tips: tips,
+					result: rows,
+					fmt: formatDate,
+					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+						userName: request.session.userName,
+						userId: request.session.userId
+					} : null,
+				});
+			})
+			
+		} else {
+			console.log('news用户不匹配');
+			response.redirect('/');
+			return;
+		}
+	}
+
 });
 
 router.get('/al/:userId', async (request, response) => {
@@ -284,8 +337,8 @@ router.get('/al/:userId', async (request, response) => {
 			})
 
 		} else {
-			console.log('用户不匹配');
-			response.redirect('/login');
+			console.log('al用户不匹配');
+			response.redirect('/');
 			return;
 		}
 	}
@@ -343,8 +396,8 @@ router.get('/ad/:userId', async (request, response) => {
 			})
 
 		} else {
-			console.log('用户不匹配');
-			response.redirect('/login');
+			console.log('ad用户不匹配');
+			response.redirect('/');
 			return;
 		}
 	}
@@ -637,7 +690,7 @@ router.post('/login', function(request, response) {
 			//response.redirect(redirect);
 			response.json({
 				code: 200,
-				msg: '操作成功'
+				msg: '登录操作成功'
 			});
 		}
 	})
@@ -1176,7 +1229,7 @@ router.post('/reply', async (request, response) => {
 				msg: '评论内容参数异常！请检查后重试'
 			});
 			return;
-		}else if(content.length > 120){
+		} else if (content.length > 120) {
 			response.json({
 				code: -412,
 				msg: '评论内容过长！'
@@ -1200,6 +1253,7 @@ router.post('/reply', async (request, response) => {
 				});
 				return;
 			} else {
+				let timer = formatDate();
 				query({
 					sql: sysUser.intoReplyLog,
 					params: [{
@@ -1216,11 +1270,37 @@ router.post('/reply', async (request, response) => {
 						filterKeyWords: request.keywords,
 						column: 'content',
 					}, {
-						values: formatDate(),
+						values: timer,
 						column: 'creat_time'
 					}],
 					res: response
 				}).then(function(res) {
+					query({
+						sql: sysUser.intoNoticeLog,
+						params: [{
+							values: articleId,
+							column: 'article_id_key'
+						}, {
+							values: userId,
+							column: 'from_user_id'
+						}, {
+							values: rows[0].user_id,
+							column: 'to_user_id'
+						}, {
+							values: content,
+							filterKeyWords: request.keywords,
+							column: 'content',
+						}, {
+							values: 'replyBy',
+							column: 'type'
+						}, {
+							values: '1',
+							column: 'state'
+						}, {
+							values: timer,
+							column: 'creat_time'
+						}]
+					});
 					response.json({
 						code: 200,
 						msg: '评论成功！'
@@ -1266,44 +1346,80 @@ router.post('/replyTo', async (request, response) => {
 		let userId = request.session.userId;
 		//未做文章校验
 		//console.log(content, replyId, articleId, toUserId, userId)
-		if(!content || content == ''){
+		if (!content || content == '') {
 			response.json({
 				code: -410,
 				msg: '回复评论内容为空！'
 			});
 			return;
-		}else if(content.length > 120){
+		} else if (content.length > 120) {
 			response.json({
 				code: -411,
 				msg: '回复评论内容过长！'
 			});
 			return;
-		}
+		};
 		query({
-			sql: sysUser.intoReplyByUser,
-			params: [{
-				values: replyId,
-			}, {
-				values: articleId,
-			}, {
-				values: userId,
-			}, {
-				values: toUserId,
-			}, {
-				values: content,
-				filterKeyWords: request.keywords,
-				column: 'content',
-			}, {
-				values: formatDate(),
-			}],
-			res: response
-		}).then(function(res) {
-			response.json({
-				code: 200,
-				msg: '回复评论成功！'
-			});
+			sql: sysUser.getUserNameById,
+			params: userId
+		}).then(function(rows) {
+			if (rows.length > 0) {
+				let timer = formatDate();
+				query({
+					sql: sysUser.intoReplyByUser,
+					params: [{
+						values: replyId,
+					}, {
+						values: articleId,
+					}, {
+						values: userId,
+					}, {
+						values: rows[0].user_name,
+					}, {
+						values: toUserId,
+					}, {
+						values: content,
+						filterKeyWords: request.keywords,
+						column: 'content',
+					}, {
+						values: timer,
+					}],
+					res: response
+				}).then(function(res) {
+					query({
+						sql: sysUser.intoNoticeLog,
+						params: [{
+							values: articleId,
+							column: 'article_id_key'
+						}, {
+							values: userId,
+							column: 'from_user_id'
+						}, {
+							values: toUserId,
+							column: 'to_user_id'
+						}, {
+							values: content,
+							filterKeyWords: request.keywords,
+							column: 'content',
+						}, {
+							values: 'replyTo',
+							column: 'type'
+						}, {
+							values: '1',
+							column: 'state'
+						}, {
+							values: timer,
+							column: 'creat_time'
+						}]
+					});
+					response.json({
+						code: 200,
+						msg: '回复评论成功！'
+					});
+				})
+			}
 		})
+
 	}
 })
-
 module.exports = router;

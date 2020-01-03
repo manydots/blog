@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= title %></title>
+    <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/static/index.js"></script>
+    <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <%- include('./top') %>
+        <nav class="mt-2" aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page"><a href="javascript:;">消息列表</a></li>
+            <li class="breadcrumb-item" >未读消息</li>
+          </ol>
+        </nav>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <ul class="list-group">
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    未读消息
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="">已读消息</a>
+                    <span class="badge badge-primary badge-pill"></span>
+                  </li>
+                </ul>
+            </div>
+            <div class="col-md-9">
+                <% if (result && result.length ) { %>
+                    <ul class="list-group list-group-flush">
+                    <% result.forEach(function(item,index){ %>
+                        <li class="list-group-item">
+                            <span class="text-primary"><%= item.user_name %></span>
+                            <a href="/a/<%= item.key_id %>" target="_blank">在<%= item.title %></a>
+                            @了你 <span class="text-info"><%= item.context %></span>
+                        </li>
+                    <% }) %>
+                    </ul>
+                <% } else { %>
+                    <div class="alert alert-secondary" role="alert">暂无数据</div>
+                <% } %>
+            </div>
+        </div>
+        <%- include('./footer')%>
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+    $(function(){
+        
+    });
+    function goNext(pageIndex,pageSize){
+        //console.log(window.location)
+        window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
+    }
+</script>

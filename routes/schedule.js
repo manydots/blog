@@ -34,7 +34,7 @@ function scheduleCron(rabbitMQ, callback) {
 				if (typeof msg == 'string') {
 					msg = JSON.parse(msg);
 				};
-				let api = msg[0].values;
+				let api = decodeURIComponent(msg[0].values);
 				let method = msg[1].values;
 				let ip = msg[2].values;
 				let ct = msg[3].values;
@@ -49,7 +49,7 @@ function scheduleCron(rabbitMQ, callback) {
 				});
 				batchNumber = 1;
 				batchQueue = [];
-				let api = msg[0].values;
+				let api = decodeURIComponent(msg[0].values);
 				let method = msg[1].values;
 				let ip = msg[2].values;
 				let ct = msg[3].values;

@@ -12,7 +12,7 @@ function middleware(router) {
 		};
 		//console.log(req.keywords)
 		//路由不为/login且token不为空
-		if (!req.session.token && (req.url.startsWith('/ad') ||req.url.startsWith('/al') || req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
+		if (!req.session.token && (req.url.startsWith('/news') || req.url.startsWith('/ad') || req.url.startsWith('/al') || req.url.startsWith('/edit') || req.url.startsWith('/send'))) {
 			let redirect = req.url.indexOf('?') > -1 ? `/login?redirect=${encodeURIComponent(req.url)}` : '/login';
 			res.redirect(redirect);
 			return;
@@ -33,7 +33,7 @@ function middleware(router) {
 			//req.session.token && !req.headers['x-pjax'] && req.method == 'POST'
 			//console.log(!req.headers['x-pjax'],req.url)
 			//console.log(res.rabbitMQ)
-			if (req.url !='/') {
+			if (req.url !='/' && !req.url.includes('favicon.ico')) {
 				//console.log(req.url, req.method)
 				let ip = getClientIp(req, 'nginx');
 				let params = [{

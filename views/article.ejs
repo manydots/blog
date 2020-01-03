@@ -7,6 +7,20 @@
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="/static/index.js"></script>
     <script src="/static/doT.min.js"></script>
+    <link href="/static/emojify.min.css" rel="stylesheet">
+    <script src="/static/emojify.min.js"></script>
+    <script>
+      // emojify.setConfig({
+      //   tag_type :'span',
+      //   img_dir:'https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic'
+      // });
+      var dir = 'https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic';
+      function replacer(emoji, emojiName) {
+        //console.log(emoji, emojiName)
+        emoji = `<img alt='${emojiName}' title='${emojiName}' class='emoji' src='${dir}/${emojiName}.png' />`
+        return emoji;
+      }
+    </script>
     <%- include('./header')%>
     <style>
         *:focus {outline: none; box-shadow:none !important;}
@@ -95,9 +109,9 @@
                               data-articleId="<%= item.article_id %>" 
                               data-from="<%= item.from_user_id %>" >
                               <strong class="mr-auto">
-                                <%= item.user_name %>:<%= item.content %>
+                                <%= item.user_name %>:<%= emoji.emojify(item.content) %>
                               </strong>
-                              <!-- <small class="text-muted ml-3 GO cursor" onclick="onReplyTo(<%= index %>,<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>)" >回复</small> -->
+                              <!-- <small class="text-muted ml-3 GO cursor" onclick="onReplyTo(<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>,this)" >回复</small> -->
                               <small class="text-muted ml-3 GO cursor" onclick="onGetReplyTo(<%= item.id %>,<%= item.article_id %>,this)" >查看回复</small>
                               <small class="text-muted ml-3"><%= diff(new Date(fmt(item.creat_time)).getTime()) %></small>
                             </div>
@@ -106,7 +120,7 @@
                                 <div class="replyToOne">
                                   <div class="media-body">
                                       <div class="form-group">
-                                          <textarea rows="3" maxlength="120" class="rtc" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便回复几句吧..."></textarea>
+                                          <textarea rows="3" maxlength="120" class="rtc" style="display: block;width: 100%;padding: 5px;resize:none;" placeholder="随便回复<%= item.user_name %>几句吧..."></textarea>
                                           <label class="clearfix mt-2" style="display: block;width: 100%">
                                             <% if(token) { %>
                                                 <button type="button" class="btn btn-dark float-right" onclick="onReplyTo(<%= item.id %>,<%= item.article_id %>,<%= item.from_user_id %>,this)" >回复</button>
@@ -143,6 +157,7 @@
 
               <% } %>
         </div>
+        <%- include('./plugin')%>
         <%- include('./footer')%>
      </div>
     <% } %>
@@ -150,9 +165,35 @@
 <script id="template-tmpl" type="text/template">
       {{~it:v:index}}
       <div class="shadow-sm mb-1 p-2 bg-white rounded clearfix">
-          <b class="float-left tar" style="width:15%">{{=v.from_user_nick}}回复：</b>
-          <strong class="float-left" style="width:70%">{{=v.content}}</strong>
-          <span class="text-muted float-right tar" style="width:15%">{{=dateDiff(new Date(formatDate(v.creat_time)).getTime())}}</span>
+          <b class="float-left tar" style="width:22%">
+            {{? v.from_user_nick == v.to_user_nick }}
+              <span class="text-primary cursor" 
+              data-toggle="modal" 
+              data-target="#exampleModal" 
+              data-articleid="{{=v.article_id}}"
+              data-replyid="{{=v.reply_id}}" 
+              data-to="{{=v.from_user_id}}" 
+              data-whatever="@{{=v.from_user_nick}}">{{=v.from_user_nick}}</span>@自己:
+            {{??}}
+              <span class="text-primary cursor" 
+              data-toggle="modal" 
+              data-target="#exampleModal" 
+              data-articleid="{{=v.article_id}}"
+              data-replyid="{{=v.reply_id}}" 
+              data-to="{{=v.from_user_id}}" 
+              data-whatever="@{{=v.from_user_nick}}">{{=v.from_user_nick}}</span>@<span class="text-primary cursor" 
+              data-toggle="modal" 
+              data-target="#exampleModal" 
+              data-articleid="{{=v.article_id}}"
+              data-replyid="{{=v.reply_id}}" 
+              data-to="{{=v.to_user_id}}" 
+              data-whatever="@{{=v.to_user_nick}}">{{=v.to_user_nick}}</span>：
+            {{?}}
+          </b>
+          <strong class="float-left" style="width:64%">{{= emojify.replace(v.content,replacer) }}</strong>
+          <span class="text-muted float-right tar" style="width:14%">
+            {{=dateDiff(new Date(formatDate(v.creat_time)).getTime())}}
+          </span>
       </div>
       {{~}}
 </script>
@@ -162,6 +203,26 @@
                 var replayContext = $('#replay-context').val() || '';
                 console.log(replayContext)
                 onReply(replayContext);
+            })
+            $('#exampleModal').on('show.bs.modal', function (event) {
+                //emoji对照表
+                //https://www.webfx.com/tools/emoji-cheat-sheet/
+                var button = $(event.relatedTarget);
+                var recipient = button.data('whatever');
+                var to = button.data('to');
+                var replyId = button.data('replyid');
+                var articleId = button.data('articleid');
+                //console.log(to,replyId,articleId)
+                var modal = $(this);
+                modal.find('.form-control').attr('placeholder',`随便回复${recipient}几句吧...`)
+                modal.find('.modal-title').text(recipient);
+                modal.find('.modal-body input').val(recipient);
+                modal.find('.btn-replayTo').attr({
+                  'data-to':to,
+                  'data-replyid':replyId,
+                  'data-articleid':articleId,
+                  onclick:`onReplyTo(${replyId},${articleId},${to},null,true)`
+                })
             })
             function onReply(reply){
                 pjaxs({
@@ -208,8 +269,13 @@
             }
         });
     }
-    function onReplyTo(replyId,articleId,toUserId,_this){
-        var content = $(_this).parent().siblings('.rtc').val();
+    function onReplyTo(replyId,articleId,toUserId,_this,modal){
+        var content = '';
+        if(!modal){
+          content = $(_this).parent().siblings('.rtc').val();
+        }else{
+          content = $('.modal-body #message-text').val();
+        }
         if(!content || content == ''){
             return;
         }
