@@ -34,8 +34,9 @@ var sysUser = {
 	getReplyByUser: 'SELECT ar.id,ar.reply_id,ar.from_user_id,ar.article_id,ar.to_user_id,ar.content,ar.from_user_nick,su.user_name to_user_nick,ar.creat_time FROM article_reply_to ar LEFT JOIN sys_user su on su.id = ar.to_user_id WHERE ar.reply_id = ? AND ar.article_id = ? order by creat_time desc limit 0,20',
 	updateSomeThing: 'UPDATE article_reply_to ar SET ar.from_user_nick = (SELECT su.user_name FROM  sys_user su WHERE su.id = ar.from_user_id)',
 	intoNoticeLog: 'INSERT INTO notice (key_id,from_user_id,to_user_id,context,type,state,creat_time) values(?,?,?,?,?,?,?)',
-	updateNoticeLog: 'UPDATE notice SET state = ? WHERE id = ?',
+	updateNoticeLog: 'UPDATE notice SET state = ? WHERE id = ? AND to_user_id = ?',
 	getNoticeLogByUserId: 'SELECT nt.id,nt.key_id,a.title,su.user_name,nt.from_user_id,nt.context,nt.state,nt.creat_time FROM notice nt LEFT JOIN sys_user su ON su.id = nt.from_user_id LEFT JOIN article a ON a.id = nt.key_id WHERE nt.to_user_id = ? AND nt.state = ? order by nt.creat_time desc limit ?,?',
+	getNoticeLogCount: 'SELECT COUNT(1) AS total FROM notice WHERE to_user_id = ? AND state = ?',
 };
 
 var {

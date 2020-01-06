@@ -11,7 +11,7 @@ var io = require('socket.io')(server);
 var router = require('./routes/index');
 var { secretKey, cookieMaxAge } = require('./utils/config');
 var { getClientIp } = require('./utils/index');
-var port = process.env.port || 3034;
+var port = process.env.port || 3035;
 var { initServer } = require('./utils/http');
 var middleware = require('./routes/middleware');
 var keywords = require('./routes/keywords');
@@ -26,8 +26,8 @@ app.use(bodyparser.urlencoded({
 	extended: true
 }));
 
-//定时器开启
-scheduleCron(mq);
+//定时器开启[true]
+scheduleCron(mq, null, true);
 
 //api访问限制20s内60次
 const limiter = rateLimit({
@@ -49,6 +49,7 @@ app.use(cache('0.02 minutes', ((req, res) => res.statusCode === 200)));
 keywords(function(rows){
 	results = rows;
 });
+
 app.use(session({
 	secret: secretKey,
 	name: '_checkToken',
@@ -63,6 +64,7 @@ app.use(session({
 initServer(io);
 
 //static
+//https://cdn.jsdelivr.net/gh/manydots/blog@0.0.1/public/index.js
 app.use('/static', express.static(path.join(__dirname, 'public')));
 
 //设置跨域访问
@@ -70,21 +72,29 @@ app.all('*', (req, res, next) => {
 	req.keywords = results;
 	res.ioServer = io;
 	res.rabbitMQ = mq;
+	res.locals.tools = null;
 	res.header("Access-Control-Allow-Origin", req.headers.origin);
 	res.header('Access-Control-Allow-Credentials', 'true');
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");
 	res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
 	res.header("X-Powered-By", '3.2.1');
-	next();
+
+	/*options请求快速响用*/
+	if (req.method == "OPTIONS") {
+		res.send(200);
+	} else {
+		next();
+	};
+
 });
+
 //console.log(middleware)
-
 app.use(middleware(express.Router()));
-
-
 //使用ejs
 app.set('views', path.join(__dirname, './views'));
 app.set("view engine", "ejs");
+// 开启模板缓存
+//app.set('view cache', true);
 
 //使用路由
 app.use(router);

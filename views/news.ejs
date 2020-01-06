@@ -17,33 +17,63 @@
         <nav class="mt-2" aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item active" aria-current="page"><a href="javascript:;">消息列表</a></li>
-            <li class="breadcrumb-item" >未读消息</li>
+            <li class="breadcrumb-item" ><%= tips %></li>
           </ol>
         </nav>
 
         <div class="row mb-3">
             <div class="col-md-3">
                 <ul class="list-group">
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    未读消息
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <a href="">已读消息</a>
-                    <span class="badge badge-primary badge-pill"></span>
-                  </li>
+                   <% if (state && state == '1' ) { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            未读消息
+                            <span class="badge badge-primary badge-pill"><%= page.total %></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/news/<%= token.userId %>?st=0">已读消息</a>
+                        </li>
+                   <% } else { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/news/<%= token.userId %>?st=1">未读消息</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            已读消息
+                            <span class="badge badge-primary badge-pill"><%= page.total %></span>
+                        </li>
+                   <% } %>
                 </ul>
             </div>
             <div class="col-md-9">
                 <% if (result && result.length ) { %>
                     <ul class="list-group list-group-flush">
                     <% result.forEach(function(item,index){ %>
-                        <li class="list-group-item">
+                        <li class="list-group-item" data-id="<%= item.id %>">
                             <span class="text-primary"><%= item.user_name %></span>
                             <a href="/a/<%= item.key_id %>" target="_blank">在<%= item.title %></a>
-                            @了你 <span class="text-info"><%= item.context %></span>
+                            回复了你 <span class="text-info"><%= item.context %></span>
+                            <% if (state && state == '1' ) { %>
+                            <span class="btn-link cursor" onclick="toRead(<%= item.id %>,'<%= item.state %>')">标记已读</span>
+                            <% } %>
                         </li>
                     <% }) %>
                     </ul>
+                    <% if (page.pageCount > 1) { %>
+                    <nav class="mt-3">
+                      <ul class="pagination pagination-sm">
+                        <li class="page-item">
+                          <a href="/news/<%= token.userId %>?st=<%= state %>&p=1&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >首页</a>
+                        </li>
+                        <% for(var i=1;i<=page.pageCount;i++){%>
+                            <li data-page="<%= i %>" class="<% if (i == page.pageIndex) { %>active<% } %> page-item" <% if (i !== page.pageIndex) { %>onclick="goNext(<%= i %>,<%= page.pageSize %>)"<% } %>>
+                                <a class="page-link" href="javascript:;"><%= i %><span class="sr-only">(current)</span></a>
+                            </li> 
+                        <% } %>
+                        <li class="page-item">
+                          <a href="/news/<%= token.userId %>?st=<%= state %>&p=<%= page.pageCount %>&s=<%= page.pageSize %>" class="page-link" tabindex="-1" data-spm-disabled="true" >尾页</a>
+                        </li>
+                      </ul>
+                    </nav>
+                    <% } %>
                 <% } else { %>
                     <div class="alert alert-secondary" role="alert">暂无数据</div>
                 <% } %>
@@ -59,6 +89,36 @@
     });
     function goNext(pageIndex,pageSize){
         //console.log(window.location)
-        window.location.href = `${window.location.pathname}?p=${pageIndex}&s=${pageSize}`;
+        window.location.href = `${window.location.pathname}?st=<%= state %>&p=${pageIndex}&s=${pageSize}`;
+    }
+
+    function toRead(readId, state){
+        if(state !='' && readId !=''){
+            if(state == '1'){
+                state = '0';
+            }else if(state == '0'){
+                state = '1';
+            };
+        }else{
+            return;
+        }
+        pjaxs({
+        url:'/read',
+        method:'post',
+        data:{
+          readId:readId,
+          state:state,
+        },
+        }).then(function(res){
+            if(res.code == -306){
+              window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname+window.location.search)}`;
+            }else if(res.code == 200){
+              setTimeout(function(){
+                   location.reload(true);
+              },50)
+            }else{
+              console.log(res.msg)
+            }
+        });
     }
 </script>

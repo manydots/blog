@@ -1,5 +1,5 @@
 const mysql = require("mysql");
-const { mysqlBase } = require("./config");
+const { mysqlBase, replaceKey } = require("./config");
 const { MD5 } = require('./crypto');
 const { formatDate } = require('./index');
 
@@ -37,7 +37,7 @@ function query(options) {
 							} else if (val.filterKeyWords) {
 								if (val.filterKeyWords) {
 									val.filterKeyWords.map(function(v) {
-										val.values = val.values.replace(new RegExp(v,'g'), '*');
+										val.values = val.values.replace(new RegExp(v,'g'), replaceKey);
 									});
 								}
 								return val.values;

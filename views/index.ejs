@@ -32,9 +32,9 @@
                             <img src="/static/head.png"  style="display: block;width: 100%;" alt="...">
                         </div>
                         <div class="media-body">
-                            <h5 class="mt-0 article-title"><%= item.title %></h5>
+                            <h5 class="mt-0 article-title"><%= emoji.emojify(item.title) %></h5>
                             <p class="article-context text-wrap text-break">
-                                <a href="/a/<%= item.id %>" target="_blank"><%= item.context %></a>
+                                <a href="/a/<%= item.id %>" target="_blank"><%= emoji.emojify(item.context) %></a>
                             </p>
                             <p class="article-author mbn">
                                 <%= item.author %> 发布于<%= diff(new Date(fmt(item.creat_time)).getTime()) %> 

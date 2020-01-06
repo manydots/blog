@@ -40,3 +40,7 @@ INSERT INTO `keywords` VALUES ('18', '屁话');
 INSERT INTO `keywords` VALUES ('19', '狗屁');
 INSERT INTO `keywords` VALUES ('20', '臭逼');
 INSERT INTO `keywords` VALUES ('21', '垃圾');
+INSERT INTO `keywords` VALUES ('22', 'link');
+INSERT INTO `keywords` VALUES ('23', 'script');
+INSERT INTO `keywords` VALUES ('24', 'Link');
+INSERT INTO `keywords` VALUES ('25', 'Script');

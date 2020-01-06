@@ -13,6 +13,7 @@ var mailBase = {
 }
 
 var secretKey = 'TEST_KEY';
+var replaceKey = ':punch:';
 
 var cookieMaxAge = 15;
 
@@ -20,5 +21,6 @@ module.exports = {
 	mysqlBase: mysqlBase,
 	secretKey: secretKey,
 	mailBase: mailBase,
-	cookieMaxAge:cookieMaxAge
+	cookieMaxAge:cookieMaxAge,
+	replaceKey:replaceKey
 };

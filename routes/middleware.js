@@ -7,6 +7,7 @@ function middleware(router) {
 		//处理部分资源路径
 		//console.log(req.session.userName)
 		//静态资源不处理
+		//console.log(res.locals)
 		if (req.url.endsWith('.js') || req.url.endsWith('.css')) {
 			res.redirect(`/static${req.url}`);
 		};

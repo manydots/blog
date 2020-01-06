@@ -40,6 +40,7 @@ router.get('/', async (request, response) => {
 			fmt: formatDate,
 			diff: dateDiff,
 			hots:hots,
+			emoji:emoji,
 			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 				userName: request.session.userName,
 				userId: request.session.userId
@@ -253,6 +254,16 @@ router.get('/news/:userId', async (request, response) => {
 			let userId = parseInt(request.params.userId);
 			let pageIndex = parseInt(request.query.p) || 1;
 			let pageSize = parseInt(request.query.s) || 5;
+			let totals = await query({
+				sql: sysUser.getNoticeLogCount,
+				params: [{
+					values: userId
+				}, {
+					values: state
+				}],
+				res:response
+			});
+			let rowCounts = totals && totals[0] && totals[0].total != '' && totals[0].total != null ? totals[0].total : 0;
 			query({
 				sql: sysUser.getNoticeLogByUserId,
 				params: [{
@@ -270,15 +281,22 @@ router.get('/news/:userId', async (request, response) => {
 					tips: tips,
 					result: rows,
 					fmt: formatDate,
+					state:state,
+					page: {
+						total: rowCounts,
+						pageIndex: pageIndex,
+						pageSize: pageSize,
+						pageCount: Math.ceil(rowCounts / pageSize)
+					},
 					token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
 						userName: request.session.userName,
 						userId: request.session.userId
 					} : null,
 				});
-			})
+			});
 			
 		} else {
-			console.log('news用户不匹配');
+			console.log('路由news用户不匹配,切换到首页');
 			response.redirect('/');
 			return;
 		}
@@ -337,7 +355,7 @@ router.get('/al/:userId', async (request, response) => {
 			})
 
 		} else {
-			console.log('al用户不匹配');
+			console.log('路由al用户不匹配,切换到首页');
 			response.redirect('/');
 			return;
 		}
@@ -396,7 +414,7 @@ router.get('/ad/:userId', async (request, response) => {
 			})
 
 		} else {
-			console.log('ad用户不匹配');
+			console.log('路由ad用户不匹配,切换到首页');
 			response.redirect('/');
 			return;
 		}
@@ -1328,7 +1346,6 @@ router.post('/getReply', async (request, response) => {
 			result: rows
 		});
 	})
-
 });
 
 router.post('/replyTo', async (request, response) => {
@@ -1421,5 +1438,36 @@ router.post('/replyTo', async (request, response) => {
 		})
 
 	}
-})
+});
+
+router.post('/read', async (request, response) => {
+	if (!request.session.token) {
+		response.json({
+			code: -306,
+			msg: '未登录'
+		});
+		return;
+	} else {
+		let readId = parseInt(request.body.readId);
+		let state = parseInt(request.body.state);
+		let userId = request.session.userId;
+		query({
+			sql: sysUser.updateNoticeLog,
+			params: [{
+				values: state
+			}, {
+				values: readId
+			}, {
+				values: userId
+			}],
+			res: response
+		}).then(function(rows) {
+			response.json({
+				code: 200,
+				result: '消息状态标记成功！'
+			});
+		})
+	}
+
+});
 module.exports = router;
