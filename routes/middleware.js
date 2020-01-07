@@ -34,7 +34,7 @@ function middleware(router) {
 			//req.session.token && !req.headers['x-pjax'] && req.method == 'POST'
 			//console.log(!req.headers['x-pjax'],req.url)
 			//console.log(res.rabbitMQ)
-			if (req.url !='/' && !req.url.includes('favicon.ico')) {
+			if (req.url !='/' && !req.url.includes('/favicon.ico')) {
 				//console.log(req.url, req.method)
 				let ip = getClientIp(req, 'nginx');
 				let params = [{

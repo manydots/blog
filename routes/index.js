@@ -5,7 +5,7 @@ const { sign,verify } = require('../utils/jwt');
 const { cookieMaxAge } = require('../utils/config');
 const { formatDate,dateDiff,curryingCheck} = require('../utils/index');
 const { sendMails } = require('../utils/sendMail');
-var emoji = require('node-emoji')
+var emoji = require('node-emoji');
 var checkUserName = curryingCheck('^[\u4E00-\u9FA5a-zA-Z0-9_]+$');
 var checkMail = curryingCheck('^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$');
 
@@ -178,6 +178,7 @@ router.get('/a/:articleId', async (request, response) => {
 				result: '文章不存在',
 				replyMap: null,
 				page:null,
+				status:null,
 				fmt: formatDate,
 				diff: dateDiff,
 				emoji:emoji,
@@ -1470,4 +1471,23 @@ router.post('/read', async (request, response) => {
 	}
 
 });
+
+//异常路由处理
+router.get('*', function(request, response) {
+	if (!request.url.includes('/favicon.ico')) {
+		console.log(`page 404 error:[${request.url}]`);
+		response.render('error', {
+			status: 404,
+			emoji: emoji,
+			title: ':alien: 页面飞到火星去了！',
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null,
+			result: ':alien: 页面飞走了！'
+		});
+	}
+});
+
+
 module.exports = router;

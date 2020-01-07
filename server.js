@@ -34,7 +34,7 @@ const limiter = rateLimit({
 	windowMs: 20 * 1000, // 20 s
 	max: 60, //limit each IP to {max} requests per windowMs
 	handler: function(req, res) {
-		let ip = getClientIp(req,'nginx');
+		let ip = getClientIp(req, 'nginx');
 		console.log(`访问频繁ip:[${ip}]`);
 		res.status(429).end(`Too many requests, please try again later. ip:${ip}`);
 	}

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title><%= title %></title>
+    <title><%= emoji.emojify(title) %></title>
     <link rel="stylesheet" type="text/css" href="/static/index.css">
     <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
@@ -15,16 +15,18 @@
     <% if (result) { %>
      <div class="container">
      	<%- include('./top')%>
+        <% if (!status) { %>
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item active" aria-current="page">详情 >></li>
           </ol>
         </nav>
-        <div class="row">
+        <% } %>
+        <div class="row <%if(status){%> mt-3 <%}%>">
             <div class="col-md-9">
             	<div class="media blog-article-list-li mb10 bordernone" >
             		<div class="media-body">
-	            	<h5 class="mt-0 article-title"><%= result %></h5>
+	            	<h5 class="mt-0 article-title"><%= emoji.emojify(result) %></h5>
 			        </div>
 		        </div>
             </div>
