@@ -620,6 +620,144 @@ router.get('/search', async (request, response) => {
 	})
 });
 
+//elasticsearch全文关键词检索
+router.get('/s', async (request, response) => {
+	let keyWords = request.query.k || '';
+	let pageSize = parseInt(request.query.s) || 5;
+	let pageIndex = parseInt(request.query.p) || 1;
+
+	if (keyWords && keyWords != '' && response.esClient) {
+		if (keyWords.length > 30) {
+			response.render('s', {
+				title: `关键词过长30字以下`,
+				code: 201,
+				keywords: keyWords,
+				result: null,
+				page: null,
+				ms: 0,
+				emoji: emoji,
+				fmt: formatDate,
+				diff: dateDiff,
+				token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+					userName: request.session.userName,
+					userId: request.session.userId
+				} : null
+			});
+			return;
+		};
+		query({
+			sql: sysUser.getSearchLog,
+			params: [{
+				values: keyWords,
+				filterKeyWords: request.keywords,
+				column: 'keywords'
+			}]
+		}).then(function(rows) {
+			if (!rows[0] || !rows[0].total) {
+				query({
+					sql: sysUser.intoSearchLog,
+					params: [{
+						values: keyWords,
+						filterKeyWords: request.keywords,
+						column: 'keywords'
+					}, {
+						values: 1,
+						column: 'total'
+					}, {
+						values: formatDate(),
+						column: 'creat_time'
+					}, {
+						values: formatDate(),
+						column: 'modify_time'
+					}],
+					res: response
+				}).then(function(res) {
+					console.log(`关键词:[${keyWords}],总数:[1];搜索日志插入成功!`);
+				});
+			} else {
+				query({
+					sql: sysUser.updateSearchLog,
+					params: [{
+						values: rows[0].total + 1
+					}, {
+						values: formatDate()
+					}, {
+						values: rows[0].id
+					}],
+					res: response
+				}).then(function(res) {
+					console.log(`关键词:[${keyWords}],总数:[${rows[0].total+1}];搜索日志更新成功!`);
+				})
+
+			}
+		})
+
+	} else {
+		response.render('s', {
+			title: `关键词为空`,
+			code: 200,
+			result: null,
+			fmt: formatDate,
+			diff: dateDiff,
+			ms: 0,
+			emoji: emoji,
+			keywords: keyWords,
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null,
+			page: null
+		});
+		return;
+	}
+	let body = {
+		size: pageSize,
+		from: (pageIndex - 1) * pageSize,
+		query: {
+			multi_match: {
+				query: keyWords,
+				fields: ["title", "context", "tags"]
+			}
+		},
+		highlight: {
+			pre_tags: ["<em>"],
+			post_tags: ["</em>"],
+			fields: {
+				title: {},
+				context: {},
+				tags: {}
+			}
+		}
+	};
+	response.esClient.search({
+		index: 'blog_article',
+		body: body
+	}).then(function(results) {
+		let rowCounts = results.hits.total.value;
+		console.log(`索引[blog_article],关键词[${keyWords}],总数[${rowCounts}],耗时[${results.took}ms]`);
+		//console.log(results.hits.hits)
+		response.render('s', {
+			title: `查询到关键词[${keyWords}]结果`,
+			code: 200,
+			result: results.hits.hits,
+			fmt: formatDate,
+			diff: dateDiff,
+			emoji: emoji,
+			ms: results.took,
+			keywords: keyWords,
+			token: request.session.token && request.session.token != undefined && request.checkUser != undefined ? {
+				userName: request.session.userName,
+				userId: request.session.userId
+			} : null,
+			page: {
+				total: rowCounts,
+				pageIndex: pageIndex,
+				pageSize: pageSize,
+				pageCount: Math.ceil(rowCounts / pageSize)
+			}
+		});
+	})
+});
 
 router.post('/login', function(request, response) {
 	let params = [{

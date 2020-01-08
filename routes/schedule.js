@@ -1,6 +1,7 @@
 const schedule = require('node-schedule');
 const { formatDate } = require('../utils/index');
-const { sysUser,query } = require('../utils/sql');
+const { sysUser, query } = require('../utils/sql');
+const { bulk } = require('../utils/importdata');
 
 // *    *    *    *    *    *
 // ┬    ┬    ┬    ┬    ┬    ┬
@@ -15,7 +16,7 @@ const { sysUser,query } = require('../utils/sql');
 //6个占位符从左到右分别代表：秒、分、时、日、月、周几
 //*表示通配符，匹配任意，当秒是*时，表示任意秒数都触发，其它类推
 
-function scheduleCron(rabbitMQ, callback, flag) {
+function scheduleCron(rabbitMQ, callback, flag, esClient) {
 	//dayOfWeek
 	//month
 	//dayOfMonth
@@ -57,10 +58,19 @@ function scheduleCron(rabbitMQ, callback, flag) {
 		})
 	});
 
+	//每小时的1分10秒触发 '10 1 * * * *' 全量更新数据
+	const k = schedule.scheduleJob('10 1 * * * *', function() {
+		console.log(`[${formatDate()}]:每小时1分10秒索引定时器已触发`);
+		if (esClient) {
+			bulk(esClient);
+		}
+	})
+
 	callback && callback(j);
 	//定时器取消
 	//j.cancel(); 
-}
+};
+
 module.exports = {
 	scheduleCron: scheduleCron
 }

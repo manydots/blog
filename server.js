@@ -9,6 +9,7 @@ var cache = require('apicache').middleware;
 var rateLimit = require("express-rate-limit");
 var io = require('socket.io')(server);
 var router = require('./routes/index');
+var elasticsearch = require('elasticsearch');
 var { secretKey, cookieMaxAge } = require('./utils/config');
 var { getClientIp } = require('./utils/index');
 var port = process.env.port || 3035;
@@ -19,6 +20,8 @@ var { RabbitMQ } = require('./utils/rabbitMQ');
 var { scheduleCron } = require('./routes/schedule');
 var results = [];
 let mq = new RabbitMQ();
+var client = null;
+let hostName = port == 3035 ? '47.98.58.14':'localhost';
 
 app.use(cookieParser());
 app.use(bodyparser.json());
@@ -26,8 +29,26 @@ app.use(bodyparser.urlencoded({
 	extended: true
 }));
 
+console.log(hostName);
+//开启elasticsearch全文关键词检索
+if (!client) {
+	client = new elasticsearch.Client({
+		host: `${hostName}:9200`,
+		log: 'error'
+	});
+	client.ping({
+		requestTimeout: 3000
+	}, function(error) {
+		if (error) {
+			console.error('elasticsearch cluster is down!');
+		} else {
+			console.log('elasticsearch is ok');
+		}
+	});
+}
+
 //定时器开启[true]
-scheduleCron(mq, null, true);
+scheduleCron(mq, null, true, client);
 
 //api访问限制20s内60次
 const limiter = rateLimit({
@@ -73,6 +94,7 @@ app.all('*', (req, res, next) => {
 	res.ioServer = io;
 	res.rabbitMQ = mq;
 	res.locals.tools = null;
+	res.esClient = client;
 	res.header("Access-Control-Allow-Origin", req.headers.origin);
 	res.header('Access-Control-Allow-Credentials', 'true');
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");

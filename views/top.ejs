@@ -66,7 +66,8 @@
                 var keywords = $('.Search-For-Keywords').val();
                 if(keywords && keywords != ''){
                     console.log(`/search?k=${keywords}`);
-                    clickGo(`/search?k=${keywords}`,'_self');
+                    //clickGo(`/search?k=${keywords}`,'_self');
+                    clickGo(`/s?k=${keywords}`,'_self');
                 }else{
                     console.log('keywords值为空')
                 }

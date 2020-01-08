@@ -37,6 +37,7 @@ var sysUser = {
 	updateNoticeLog: 'UPDATE notice SET state = ? WHERE id = ? AND to_user_id = ?',
 	getNoticeLogByUserId: 'SELECT nt.id,nt.key_id,a.title,su.user_name,nt.from_user_id,nt.context,nt.state,nt.creat_time FROM notice nt LEFT JOIN sys_user su ON su.id = nt.from_user_id LEFT JOIN article a ON a.id = nt.key_id WHERE nt.to_user_id = ? AND nt.state = ? order by nt.creat_time desc limit ?,?',
 	getNoticeLogCount: 'SELECT COUNT(1) AS total FROM notice WHERE to_user_id = ? AND state = ?',
+	getArticleEsAll: "SELECT a.id,a.author,a.state,a.user_id,a.title,a.context,a.tags,a.creat_time,a.modify_time FROM article a WHERE a.state = ? order by creat_time desc",
 };
 
 var {
