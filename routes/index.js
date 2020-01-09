@@ -55,6 +55,14 @@ router.get('/', async (request, response) => {
 	})
 });
 
+router.get('/test', async (request, response) => {
+	response.render('test', {
+		emoji:emoji,
+		title: '临时测试路由 :punch: ~~~',
+		result: '临时测试路由 <em>高亮字符</em> :punch: ~~~',
+	})
+})
+
 router.get('/login', function(request, response) {
 	//console.log('login---->', request.session.token)
 	response.render('login', {
@@ -716,7 +724,7 @@ router.get('/s', async (request, response) => {
 		query: {
 			multi_match: {
 				query: keyWords,
-				fields: ["title", "context", "tags"]
+				fields: ["title", "context", "tags", "author"]
 			}
 		},
 		highlight: {
@@ -725,7 +733,8 @@ router.get('/s', async (request, response) => {
 			fields: {
 				title: {},
 				context: {},
-				tags: {}
+				tags: {},
+				author: {}
 			}
 		}
 	};
@@ -734,7 +743,7 @@ router.get('/s', async (request, response) => {
 		body: body
 	}).then(function(results) {
 		let rowCounts = results.hits.total.value;
-		console.log(`索引[blog_article],关键词[${keyWords}],总数[${rowCounts}],耗时[${results.took}ms]`);
+		console.log(`索引[blog_article],关键词[${keyWords}],总条数[${rowCounts}],耗时[${results.took}ms]`);
 		//console.log(results.hits.hits)
 		response.render('s', {
 			title: `查询到关键词[${keyWords}]结果`,
@@ -907,9 +916,24 @@ router.post('/publish', function(request, response) {
 	}];
 	query({
 		sql: sysUser.edit,
+		type: 'es-article-publish',
 		params: params,
 		res: response
 	}).then(function(rows) {
+		//console.log(rows.insertId)
+
+		//变动文章放到rabbitMQ队列等待批量更新
+		if (response.rabbitMQ) {
+			let _params = {
+				id: rows.insertId,
+				type: 'es-article-publish'
+			};
+			response.rabbitMQ.sendQueueMsg('esArticleQueue', _params, (text) => {
+				if (text == 'success') {
+					console.log(`[send-esArticleQueue]:success.`);
+				}
+			});
+		};
 		response.json({
 			code: 200,
 			msg: '文章发布成功！'
@@ -927,6 +951,7 @@ router.post('/edits', function(request, response) {
 	} else {
 		query({
 			sql: sysUser.getArticleOwner,
+			type:'es-article-update',
 			params: [{
 				values: request.body.id
 			}, {
@@ -968,6 +993,19 @@ router.post('/edits', function(request, response) {
 					}],
 					res: response
 				}).then(function(res) {
+
+					//变动文章放到rabbitMQ队列等待批量更新
+					if (response.rabbitMQ) {
+						let _params = {
+							id: request.body.id,
+							type: 'es-article-update'
+						};
+						response.rabbitMQ.sendQueueMsg('esArticleQueue', _params, (text) => {
+							if (text == 'success') {
+								console.log(`[send-esArticleQueue]:success.`);
+							}
+						});
+					};
 					response.json({
 						code: 200,
 						msg: '文章更新成功！'

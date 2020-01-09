@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= emoji.emojify(title) %></title>
+    <link rel="stylesheet" type="text/css" href="/static/index.css">
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/static/index.js"></script>
+    <%- include('./header')%>
+    <style>
+        *:focus {outline: none; box-shadow:none !important;}
+        em{
+            color: red;
+            font-weight: 600;
+            font-style: normal;
+        }
+    </style>
+</head>
+<body>
+   <div>
+       <div><%= title %></div>
+       <div><%= emoji.emojify(title) %></div>
+   </div>
+   <div>
+       <div><%= result %></div>
+       <div><%= emoji.emojify(result) %></div>
+   </div>
+   <div>
+       <div><%- result %></div>
+       <div><%- emoji.emojify(result) %></div>
+   </div>
+</body>
+<script type="text/javascript">
+    var str = '<%- emoji.emojify(result) %>';
+    console.log(str);
+</script>
+</html>

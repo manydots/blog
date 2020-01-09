@@ -29,7 +29,7 @@ var sysUser = {
 	intoSearchLog: 'INSERT INTO article_search (keywords,total,creat_time,modify_time) values(?,?,?,?)',
 	getSearchLog: 'SELECT id,total FROM article_search WHERE keywords = ?',
 	updateSearchLog: 'UPDATE article_search SET total = ? , modify_time = ? WHERE id = ?',
-	getSearchHots: 'SELECT a.id,a.keywords,a.total FROM article_search a WHERE a.keywords NOT LIKE "%*%" order by a.total desc limit 0,5',
+	getSearchHots: 'SELECT a.id,a.keywords,a.total FROM article_search a WHERE a.keywords NOT LIKE "%*%" order by a.total desc limit 0,10',
 	intoReplyByUser: 'INSERT INTO article_reply_to (reply_id,article_id,from_user_id,from_user_nick,to_user_id,content,creat_time) values(?,?,?,?,?,?,?)',
 	getReplyByUser: 'SELECT ar.id,ar.reply_id,ar.from_user_id,ar.article_id,ar.to_user_id,ar.content,ar.from_user_nick,su.user_name to_user_nick,ar.creat_time FROM article_reply_to ar LEFT JOIN sys_user su on su.id = ar.to_user_id WHERE ar.reply_id = ? AND ar.article_id = ? order by creat_time desc limit 0,20',
 	updateSomeThing: 'UPDATE article_reply_to ar SET ar.from_user_nick = (SELECT su.user_name FROM  sys_user su WHERE su.id = ar.from_user_id)',
@@ -38,6 +38,8 @@ var sysUser = {
 	getNoticeLogByUserId: 'SELECT nt.id,nt.key_id,a.title,su.user_name,nt.from_user_id,nt.context,nt.state,nt.creat_time FROM notice nt LEFT JOIN sys_user su ON su.id = nt.from_user_id LEFT JOIN article a ON a.id = nt.key_id WHERE nt.to_user_id = ? AND nt.state = ? order by nt.creat_time desc limit ?,?',
 	getNoticeLogCount: 'SELECT COUNT(1) AS total FROM notice WHERE to_user_id = ? AND state = ?',
 	getArticleEsAll: "SELECT a.id,a.author,a.state,a.user_id,a.title,a.context,a.tags,a.creat_time,a.modify_time FROM article a WHERE a.state = ? order by creat_time desc",
+	getArticleBulkIn: "SELECT * FROM article WHERE id IN(?) ",
+	getArticleBulkOr: "SELECT * FROM article WHERE "
 };
 
 var {

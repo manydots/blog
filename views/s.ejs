@@ -33,30 +33,36 @@
             <div class="col-md-9">
                 <% if (result && result.length > 0) { %>
                     <% result.forEach(function(item,index){ %>
-                    <div class="media blog-article-list-li mb10" >
+                    <div class="media blog-article-list-li mb10 cursor" onclick="goTo('/a/<%= item._source.id %>')">
                     <div class="media-body">
                             <h5 class="mt-0 article-title">
-                                <!-- item.highlight带有标签的无法使用emoji.emojify？？ -->
+                                <!-- item.highlight带有标签的无法使用emoji.emojify。
+                                测试单独使用正常,原因:item.highlight.title为数组 -->
+                                <!--  console.log ejs标签中使用可打印在控制台 -->
                                 <% if (item.highlight.title) { %>
-                                    <%- item.highlight.title %>
+                                    <%- emoji.emojify(item.highlight.title[0]) %>
                                 <% } else { %>
                                     <%- emoji.emojify(item._source.title) %>
                                 <% } %>
                             </h5>
-                            <a href="/a/<%= item._source.id %>" target="_blank">
-                                <p class="mb-1 article-context text-wrap text-break" style="max-height: 42px;overflow: hidden;">
+                            <p class="mb-1 article-context text-wrap text-break" style="max-height: 42px;overflow: hidden;">
                                 <% if (item.highlight.context) { %>
-                                    <%- item.highlight.context %>
+                                    <%- emoji.emojify(item.highlight.context[0]) %>
                                 <% } else { %>
                                     <%- emoji.emojify(item._source.context) %>
                                 <% } %>
-                                </p>
-                            </a>
+                            </p>
                             <small class="text-muted">
-                                <%- item._source.author %>
-                                <small class="text-muted"><%= diff(new Date(fmt(item._source.creat_time)).getTime()) %></small> 
+                                <% if (item.highlight.author) { %>
+                                    <%- emoji.emojify(item.highlight.author[0]) %>
+                                <% } else { %>
+                                    <%- emoji.emojify(item._source.author) %>
+                                <% } %>
+                                <small class="text-muted">
+                                    <%= diff(new Date(fmt(item._source.creat_time)).getTime()) %>
+                                </small> 
                                 <% if (item.highlight.tags) { %>
-                                    <%- item.highlight.tags %>
+                                    <%- emoji.emojify(item.highlight.tags[0]) %>
                                 <% } else { %>
                                     <%- emoji.emojify(item._source.tags) %>
                                 <% } %>
@@ -70,12 +76,12 @@
             </div>
             <div class="col-md-3 mb10">
                 <ul class="list-group list-group-flush" style="font-size:12px;">
-                    <li class="list-group-item">文章搜索功能从sql like模糊查找迁移 基于elasticsearch全文检索</li>
+                    <li class="list-group-item">文章搜索功能从sql like模糊查找迁移至基于elasticsearch全文检索；<span class="alert-link">英文基于单词检索</span></li>
                     <li class="list-group-item">
                     <a class="alert-link" href="https://blog.csdn.net/UbuntuTouch/article/details/100112283" target="_blank">Nodejs访问Elasticsearch</a>
                     </li>
-                    <li class="list-group-item">简单使用node-schedule定时同步数据(每小时1分10秒触发)</li>
-                    <li class="list-group-item">于2020-1-8 17:26:00 更新搜索</li>
+                    <li class="list-group-item">使用node-schedule增量批量模式同步数据</li>
+                    <li class="list-group-item">于2020-1-8 17:30:00 更新全文检索</li>
                 </ul>
             </div>
         </div>
@@ -106,6 +112,10 @@
     function goNext(pageIndex,pageSize){
         //console.log(window.location)
         window.location.href = `${window.location.pathname}?k=${getUrlParam('k')}&p=${pageIndex}&s=${pageSize}`;
+    }
+    function goTo(link){
+        //console.log(window.location)
+        window.location.href = link;
     }
 </script>
 </html>

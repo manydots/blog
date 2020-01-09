@@ -55,7 +55,7 @@ function middleware(router) {
 					res.rabbitMQ.sendQueueMsg('testQueue', params, (msg) => {
 						//success
 						if (msg == 'success') {
-							console.log(`[sendQueueMsg]:success.`);
+							console.log(`[send-testQueue]:success.`);
 							if (res.ioServer) {
 								//向web前端推送消息
 								res.ioServer.sockets.emit('Queues', {

@@ -74,12 +74,12 @@
                 </div> -->
             </div>
             <div class="col-md-3 mb10">
-                <h6 class="text-secondary">热搜关键字</h6>
+                <h6 class="text-secondary">热搜关键字TOP10</h6>
                 <div class="">
                 <% if (hots) { %>
                     <div class="list-group">
                     <% hots.forEach(function(item,index){ %>
-                      <a href="/search?k=<%= item.keywords %>" data-spm-disabled="true" class="list-group-item list-group-item-action">
+                      <a href="/s?k=<%= item.keywords %>" data-spm-disabled="true" class="list-group-item list-group-item-action">
                         <%= item.keywords %> <span class="badge badge-light"><%= item.total %></span>
                       </a>
                     <% }) %>
